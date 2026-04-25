@@ -1,0 +1,50 @@
+import lark_oapi as lark
+from packages.shared.fix_ssl import *
+from apps.feishu_event_consumer.handlers.message_event_handler import (
+    handle_p2_im_message_receive_v1,
+)
+from packages.infrastructure.db.database import init_db
+from packages.shared.config import get_settings
+from packages.shared.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def build_event_handler() -> lark.EventDispatcherHandler:
+    settings = get_settings()
+
+    return (
+        lark.EventDispatcherHandler.builder(
+            settings.feishu_encrypt_key or "",
+            settings.feishu_verification_token or "",
+            lark.LogLevel.DEBUG if settings.debug else lark.LogLevel.INFO,
+        )
+        .register_p2_im_message_receive_v1(handle_p2_im_message_receive_v1)
+        .build()
+    )
+
+
+def main() -> None:
+    settings = get_settings()
+    init_db()
+
+    if not settings.feishu_app_id or not settings.feishu_app_secret:
+        raise RuntimeError("FEISHU_APP_ID and FEISHU_APP_SECRET must be configured")
+
+    event_handler = build_event_handler()
+    
+    print("正在连接飞书服务器...")
+
+    client = lark.ws.Client(
+        settings.feishu_app_id,
+        settings.feishu_app_secret,
+        event_handler=event_handler,
+        log_level=lark.LogLevel.DEBUG if settings.debug else lark.LogLevel.INFO,
+    )
+
+    logger.info("Starting Feishu long-connection event consumer...")
+    client.start()
+
+
+if __name__ == "__main__":
+    main()

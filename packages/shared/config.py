@@ -1,0 +1,30 @@
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "Agent-Pilot"
+    app_env: str = "dev"
+    debug: bool = True
+
+    database_url: str = "sqlite:///./agent_pilot.db"
+
+    feishu_app_id: str = "cli_a960eec755385cef"
+    feishu_app_secret: str = "62Ui1XwklISacAPM0YZ1ldWVQwr21qEm"
+    feishu_verification_token: str = ""
+    feishu_encrypt_key: str = ""
+    feishu_base_url: str = "https://open.feishu.cn/open-apis"
+
+    # long_connection / webhook / both。当前 MVP 推荐使用 long_connection。
+    feishu_event_mode: str = "long_connection"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
