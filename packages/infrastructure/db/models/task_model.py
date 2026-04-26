@@ -9,7 +9,7 @@ class TaskModel(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    task_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    task_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     source_type: Mapped[str] = mapped_column(String(64), default="FEISHU_IM")
     source_chat_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     source_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)

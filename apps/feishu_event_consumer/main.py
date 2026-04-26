@@ -12,6 +12,7 @@ logger = get_logger(__name__)
 
 def build_event_handler() -> lark.EventDispatcherHandler:
     settings = get_settings()
+    print("Registering Feishu message handler:", handle_p2_im_message_receive_v1, flush=True)
 
     return (
         lark.EventDispatcherHandler.builder(

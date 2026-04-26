@@ -7,7 +7,7 @@ from apps.api.app.middlewares.error_handler import register_exception_handlers
 from packages.infrastructure.db.database import init_db
 
 
-app = FastAPI(title="Agent-Pilot API")
+app = FastAPI(title="IM-Agent API")
 
 register_exception_handlers(app)
 

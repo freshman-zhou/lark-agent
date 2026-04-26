@@ -1,19 +1,21 @@
+from dataclasses import dataclass
 from datetime import datetime
-from pydantic import BaseModel, Field
-from .task_status import TaskStatus
+from typing import Any
 
+from packages.domain.task.task_status import TaskStatus, TaskType, TaskSourceType
 
-class TaskEntity(BaseModel):
+@dataclass
+class TaskEntity:
     id: str
     title: str
-    task_type: str
-    source_type: str = "FEISHU_IM"
-    source_chat_id: str | None = None
-    source_message_id: str | None = None
-    creator_id: str | None = None
-    status: TaskStatus = TaskStatus.CREATED
-    progress: int = 0
-    current_step: str = "任务已创建"
-    plan_json: dict | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    task_type: TaskType
+    status: TaskStatus
+    source_type: TaskSourceType
+    source_chat_id: str | None
+    source_message_id: str | None
+    creator_id: str | None
+    progress: int
+    current_step: str
+    plan_json: dict[str, Any] | None
+    created_at: datetime
+    updated_at: datetime

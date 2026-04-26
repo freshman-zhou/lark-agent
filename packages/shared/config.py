@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Agent-Pilot"
+    app_name: str = "IMAgent-Pilot"
     app_env: str = "dev"
     debug: bool = True
 
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     feishu_encrypt_key: str = ""
     feishu_base_url: str = "https://open.feishu.cn/open-apis"
 
-    # long_connection / webhook / both。当前 MVP 推荐使用 long_connection。
+    # long_connection / webhook 。当前选择使用 long_connection。
     feishu_event_mode: str = "long_connection"
 
     model_config = SettingsConfigDict(
