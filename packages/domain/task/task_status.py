@@ -3,17 +3,28 @@ from enum import Enum
 
 class TaskStatus(str, Enum):
     CREATED = "CREATED"
-    PLANNING = "PLANNING"
+    PREVIEWING = "PREVIEWING"
+    #PLANNING = "PLANNING"
     WAITING_CONFIRM = "WAITING_CONFIRM"
+    CONFIRMED = "CONFIRMED"
     RUNNING = "RUNNING"
+
+    WAITING_USER_INPUT = "WAITING_USER_INPUT"
+
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    IGNORED = "IGNORED"
+
+    PLANNING = "PLANNING"
+
     DOC_GENERATING = "DOC_GENERATING"
     DOC_READY = "DOC_READY"
     SLIDE_GENERATING = "SLIDE_GENERATING"
     SLIDE_READY = "SLIDE_READY"
     DELIVERING = "DELIVERING"
     DELIVERED = "DELIVERED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
+    
 
 
 class TaskType(str, Enum):
@@ -27,3 +38,10 @@ class TaskType(str, Enum):
 class TaskSourceType(str, Enum):
     FEISHU_IM = "FEISHU_IM"
     WEB_WORKBENCH = "WEB_WORKBENCH"
+
+
+class AgentActionStatus(str, Enum):
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"

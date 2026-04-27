@@ -13,6 +13,7 @@ from packages.shared.logger import get_logger
 logger = get_logger(__name__)
 normalizer = LongConnectionEventNormalizer()
 
+#处理回调逻辑，不管什么环境都能正确地执行异步的消息处理逻辑。
 def handle_p2_im_message_receive_v1(data: lark.im.v1.P2ImMessageReceiveV1) -> None:
     print(">>> ENTER handle_p2_im_message_receive_v1", flush=True)
     logger.info("Received Feishu long-connection message event")
@@ -36,7 +37,7 @@ def _log_unhandled_task_exception(task: asyncio.Task) -> None:
 async def _handle_p2_im_message_receive_v1(data: lark.im.v1.P2ImMessageReceiveV1) -> None:
     """飞书长连接接收消息事件处理器。
 
-    当前 MVP 里直接创建 task 并回复。
+    v1里直接创建 task 并回复。
     后续接入 LLM、文档、PPT 后，这里应只入队，然后立即返回，耗时工作交给 worker。
     """
     db = SessionLocal()
@@ -59,8 +60,7 @@ async def _handle_p2_im_message_receive_v1(data: lark.im.v1.P2ImMessageReceiveV1
         await service.handle_message_event(event)
 
     except Exception as exc:
-        logger.error("Failed to handle Feishu long-connection event: %s", exc)
-        logger.debug("Traceback:\n%s", traceback.format_exc())
+        logger.exception("Failed to handle Feishu long-connection event: %s", exc)
 
     finally:
         db.close()

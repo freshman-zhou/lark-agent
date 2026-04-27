@@ -3,13 +3,14 @@ import re
 
 from sqlalchemy.orm import Session
 
+from packages.application.task_action_service import TaskActionService
 from packages.application.task_service import TaskService
+from packages.integrations.feishu.auth.signature_verify import verify_verification_token
 from packages.integrations.feishu.card.card_builder import CardBuilder
 from packages.integrations.feishu.event.feishu_event_dto import FeishuMessageEventDTO
 from packages.integrations.feishu.event.webhook_event_normalizer import WebhookEventNormalizer
 from packages.integrations.feishu.im.event_parser import FeishuEventParser
 from packages.integrations.feishu.im.message_api import FeishuMessageApi
-from packages.integrations.feishu.auth.signature_verify import verify_verification_token
 from packages.shared.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +28,7 @@ class FeishuEventService:
         self.webhook_normalizer = WebhookEventNormalizer()
         self.task_service = TaskService(db)
         self.message_api = FeishuMessageApi()
+        self.task_action_service = TaskActionService(db)
     
     #处理消息  理解消息识别意图并生成任务。  v1版本只做简单触发
     async def handle_message_event(self, event: FeishuMessageEventDTO) -> dict:
@@ -47,25 +49,48 @@ class FeishuEventService:
             )
             return {"code": 0, "message": "empty command"}
 
-        task = self.task_service.create_from_feishu_message(
+        #截取 确认/取消任务
+        confirm_task_id = self._extract_action_task_id(command, action="确认")
+        if confirm_task_id:
+            result = await self.task_action_service.confirm_and_run(confirm_task_id)
+            await self.message_api.reply_text(
+                message_id=event.message_id,
+                text=CardBuilder.runtime_result_text(result),
+            )
+            return {
+                "code": 0,
+                "message": "confirmed",
+                "task_id": confirm_task_id,
+                "runtime_result": result,
+            }
+
+        cancel_task_id = self._extract_action_task_id(command, action="取消")
+        if cancel_task_id:
+            result = self.task_action_service.cancel(cancel_task_id)
+            await self.message_api.reply_text(
+                message_id=event.message_id,
+                text=f"任务已取消：{result.get('task_id')}",
+            )
+            return {
+                "code": 0,
+                "message": "cancelled",
+                "task_id": cancel_task_id,
+            }
+
+        task = self.task_service.create_preview_from_feishu_message(
             content=command,
             chat_id=event.chat_id,
             message_id=event.message_id,
             creator_id=event.sender_id,
         )
 
-        steps = []
-        if task.plan_json:
-            steps = [
-                step.get("description") or step.get("name")
-                for step in task.plan_json.get("steps", [])
-            ]
+        preview = task.plan_json or {}
 
-        reply_text = CardBuilder.task_created_text(
+        reply_text = CardBuilder.task_preview_text(
             task_id=task.id,
             title=task.title,
             task_type=task.task_type,
-            steps=steps,
+            preview=preview,
         )
 
         await self.message_api.reply_text(
@@ -75,7 +100,7 @@ class FeishuEventService:
 
         return {
             "code": 0,
-            "message": "ok",
+            "message": "preview_created",
             "task_id": task.id,
         }
     
@@ -122,3 +147,11 @@ class FeishuEventService:
         text = re.sub(r"\s+", " ", text)
 
         return text.strip()
+    
+    @staticmethod
+    def _extract_action_task_id(command: str, action: str) -> str | None:
+        pattern = rf"^\s*{re.escape(action)}\s*[:：]?\s*(task_[a-zA-Z0-9]+)\s*$"
+        match = re.search(pattern, command)
+        if not match:
+            return None
+        return match.group(1)

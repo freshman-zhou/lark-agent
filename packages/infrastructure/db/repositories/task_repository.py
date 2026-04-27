@@ -47,11 +47,18 @@ class TaskRepository:
         stmt = select(TaskModel).order_by(TaskModel.created_at.desc()).limit(limit)
         return [self._to_entity(item) for item in self.db.execute(stmt).scalars().all()]
 
-    def update_status(self, task_id: str, status: TaskStatus, current_step: str, progress: int | None = None) -> TaskEntity:
+    def update_status(
+        self,
+        task_id: str,
+        status: TaskStatus | str,
+        current_step: str,
+        progress: int | None = None,
+        error_message: str | None = None,
+    ) -> TaskEntity:
         model = self.db.get(TaskModel, task_id)
         if not model:
             raise NotFoundException(f"Task not found: {task_id}")
-        model.status = status.value
+        model.status = status.value if isinstance(status, TaskStatus) else str(status)
         model.current_step = current_step
         if progress is not None:
             model.progress = progress
