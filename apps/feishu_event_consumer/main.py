@@ -3,6 +3,9 @@ from packages.shared.fix_ssl import *
 from apps.feishu_event_consumer.handlers.message_event_handler import (
     handle_p2_im_message_receive_v1,
 )
+from apps.feishu_event_consumer.handlers.card_action_handler import (
+    handle_p2_card_action_trigger,
+)
 from packages.infrastructure.db.database import init_db
 from packages.shared.config import get_settings
 from packages.shared.logger import get_logger
@@ -21,6 +24,7 @@ def build_event_handler() -> lark.EventDispatcherHandler:
             lark.LogLevel.DEBUG if settings.debug else lark.LogLevel.INFO,
         )
         .register_p2_im_message_receive_v1(handle_p2_im_message_receive_v1)
+        .register_p2_card_action_trigger(handle_p2_card_action_trigger)
         .build()
     )
 

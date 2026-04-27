@@ -13,7 +13,7 @@ async def confirm_task(
     db: Session = Depends(get_db_session),
 ):
     service = TaskActionService(db)
-    return await service.confirm_and_run(task_id)
+    return await service.confirm_and_start(task_id)
 
 
 @router.post("/{task_id}/actions/cancel")

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from packages.application.agent_run_service import AgentRunService
 from packages.agent.runtime.agent_runtime import AgentRuntime
 from packages.domain.task.task_status import TaskStatus
 from packages.infrastructure.db.repositories.agent_action_repository import AgentActionRepository
@@ -13,8 +14,9 @@ class TaskActionService:
         self.task_repository = TaskRepository(db)
         self.action_repository = AgentActionRepository(db)
         self.runtime = AgentRuntime(db)
+        self.agent_run_service = AgentRunService()
 
-    async def confirm_and_run(self, task_id: str) -> dict:
+    async def confirm_and_start(self, task_id: str) -> dict:
         task = self.task_repository.get_by_id(task_id)
 
         if task is None:
@@ -52,7 +54,17 @@ class TaskActionService:
             progress=5,
         )
 
-        return await self.runtime.run(task_id)
+        self.agent_run_service.start_background(task_id)
+
+        return {
+            "task_id": task_id,
+            "status": TaskStatus.CONFIRMED.value,
+            "message": "任务已确认，AgentRuntime 已开始后台执行",
+        }
+
+    async def confirm_and_run(self, task_id: str) -> dict:
+        """兼容旧代码。后续统一使用 confirm_and_start。"""
+        return await self.confirm_and_start(task_id)
 
     def cancel(self, task_id: str) -> dict:
         task = self.task_repository.get_by_id(task_id)

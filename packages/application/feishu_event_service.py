@@ -4,6 +4,7 @@ import re
 from sqlalchemy.orm import Session
 
 from packages.application.task_action_service import TaskActionService
+from packages.application.task_notify_service import TaskNotifyService
 from packages.application.task_service import TaskService
 from packages.integrations.feishu.auth.signature_verify import verify_verification_token
 from packages.integrations.feishu.card.card_builder import CardBuilder
@@ -29,6 +30,7 @@ class FeishuEventService:
         self.task_service = TaskService(db)
         self.message_api = FeishuMessageApi()
         self.task_action_service = TaskActionService(db)
+        self.notify_service = TaskNotifyService()
     
     #处理消息  理解消息识别意图并生成任务。  v1版本只做简单触发
     async def handle_message_event(self, event: FeishuMessageEventDTO) -> dict:
@@ -49,7 +51,7 @@ class FeishuEventService:
             )
             return {"code": 0, "message": "empty command"}
 
-        #截取 确认/取消任务
+        #截取 确认/取消任务   保留做兜底
         confirm_task_id = self._extract_action_task_id(command, action="确认")
         if confirm_task_id:
             result = await self.task_action_service.confirm_and_run(confirm_task_id)
@@ -84,19 +86,26 @@ class FeishuEventService:
             creator_id=event.sender_id,
         )
 
-        preview = task.plan_json or {}
+        try:
+            await self.notify_service.send_preview_by_reply(
+                message_id=event.message_id,
+                task=task,
+            )
+        except Exception as exc:
+            logger.exception("Failed to send preview card, fallback to text: %s", exc)
 
-        reply_text = CardBuilder.task_preview_text(
-            task_id=task.id,
-            title=task.title,
-            task_type=task.task_type,
-            preview=preview,
-        )
+            preview = task.plan_json or {}
+            reply_text = CardBuilder.task_preview_text(
+                task_id=task.id,
+                title=task.title,
+                task_type=task.task_type,
+                preview=preview,
+            )
 
-        await self.message_api.reply_text(
-            message_id=event.message_id,
-            text=reply_text,
-        )
+            await self.message_api.reply_text(
+                message_id=event.message_id,
+                text=reply_text,
+            )
 
         return {
             "code": 0,
