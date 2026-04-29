@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     # long_connection / webhook 。当前选择使用 long_connection。
     feishu_event_mode: str = "long_connection"
 
+     # 群聊上下文拉取配置
+    chat_context_limit: int = 50
+    chat_context_max_chars: int = 12000
+
+    # LLM 配置
+    llm_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
+    llm_api_key: str = "  "
+    llm_model: str = " "
+    llm_timeout: int = 60
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

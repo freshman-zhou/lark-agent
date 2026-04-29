@@ -75,7 +75,7 @@ class AgentRunService:
                     await notify_service.send_failed_to_chat(
                         chat_id=refreshed_task.source_chat_id,
                         task=refreshed_task,
-                        error_message=refreshed_task.error_message or "未知错误",
+                        error_message=self._extract_runtime_error(result),
                     )
 
         except Exception as exc:
@@ -131,3 +131,9 @@ class AgentRunService:
         if isinstance(status, TaskStatus):
             return status
         return TaskStatus(status)
+
+    @staticmethod
+    def _extract_runtime_error(runtime_result: Any) -> str:
+        if isinstance(runtime_result, dict):
+            return str(runtime_result.get("error") or runtime_result.get("message") or "未知错误")
+        return str(runtime_result or "未知错误")
