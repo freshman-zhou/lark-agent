@@ -72,9 +72,9 @@ class CardBuilder:
     @staticmethod
     def runtime_result_text(result: dict) -> str:
         return (
-            "✅ AgentRuntime 执行结束\n\n"
+            "✅ 任务操作已处理\n\n"
             f"任务 ID：{result.get('task_id')}\n"
             f"状态：{result.get('status')}\n"
-            f"执行动作数：{result.get('action_count', 0)}\n"
+            f"Job 状态：{result.get('job_status', '-')}\n"
             f"说明：{result.get('message', '')}"
         )

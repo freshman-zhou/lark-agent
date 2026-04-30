@@ -95,4 +95,4 @@ class AgentActionRepository:
             .where(AgentActionModel.task_id == task_id)
             .order_by(AgentActionModel.sequence.asc())
         )
-        return list(self.db.scalars(stmt).all())
+        return list(self.db.execute(stmt).scalars().all())

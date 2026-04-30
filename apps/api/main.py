@@ -7,6 +7,7 @@ from apps.api.app.middlewares.error_handler import register_exception_handlers
 from packages.infrastructure.db.database import init_db
 from apps.api.app.routers.task_action_router import router as task_action_router
 from packages.application.task_worker_service import task_worker_service
+from apps.api.app.routers.task_execution_router import router as task_execution_router
 
 
 app = FastAPI(title="IM-Agent API")
@@ -17,6 +18,7 @@ app.include_router(health_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
 app.include_router(feishu_event_router, prefix="/api")
 app.include_router(task_action_router, prefix="/api")
+app.include_router(task_execution_router, prefix="/api")
 
 
 @app.on_event("startup")

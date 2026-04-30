@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
@@ -11,11 +11,15 @@ class TaskEntity:
     task_type: TaskType
     status: TaskStatus
     source_type: TaskSourceType
-    source_chat_id: str | None
-    source_message_id: str | None
-    creator_id: str | None
     progress: int
-    current_step: str
-    plan_json: dict[str, Any] | None
     created_at: datetime
     updated_at: datetime
+    source_chat_id: str | None = None
+    source_message_id: str | None = None
+    creator_id: str | None = None
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = None
+  
+    current_step: str = "任务已创建"
+    plan_json: dict[str, Any] | None = field(default_factory=dict)
+    

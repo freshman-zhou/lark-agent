@@ -6,6 +6,7 @@ from apps.feishu_event_consumer.handlers.message_event_handler import (
 from apps.feishu_event_consumer.handlers.card_action_handler import (
     handle_p2_card_action_trigger,
 )
+from packages.application.task_worker_service import task_worker_service
 from packages.infrastructure.db.database import init_db
 from packages.shared.config import get_settings
 from packages.shared.logger import get_logger
@@ -32,6 +33,7 @@ def build_event_handler() -> lark.EventDispatcherHandler:
 def main() -> None:
     settings = get_settings()
     init_db()
+    task_worker_service.start_background()
 
     if not settings.feishu_app_id or not settings.feishu_app_secret:
         raise RuntimeError("FEISHU_APP_ID and FEISHU_APP_SECRET must be configured")
@@ -48,7 +50,10 @@ def main() -> None:
     )
 
     logger.info("Starting Feishu long-connection event consumer...")
-    client.start()
+    try:
+        client.start()
+    finally:
+        task_worker_service.stop()
 
 
 if __name__ == "__main__":

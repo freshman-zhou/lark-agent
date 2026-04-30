@@ -54,7 +54,10 @@ class FeishuEventService:
         #截取 确认/取消任务   保留做兜底
         confirm_task_id = self._extract_action_task_id(command, action="确认")
         if confirm_task_id:
-            result = await self.task_action_service.confirm_and_run(confirm_task_id)
+            result = await self.task_action_service.confirm_and_run(
+                task_id=confirm_task_id,
+                confirmed_by=event.sender_id,
+            )
             await self.message_api.reply_text(
                 message_id=event.message_id,
                 text=CardBuilder.runtime_result_text(result),

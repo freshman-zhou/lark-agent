@@ -38,13 +38,40 @@ class TaskJobRepository:
     def get_by_id(self, job_id: str) -> TaskJobModel | None:
         return self.db.get(TaskJobModel, job_id)
 
-    def claim_next_pending_job(self) -> TaskJobModel | None:
-        """
-        领取一个 PENDING job。
+    def list_by_task(self, task_id: str) -> list[TaskJobModel]:
+        stmt = (
+            select(TaskJobModel)
+            .where(TaskJobModel.task_id == task_id)
+            .order_by(TaskJobModel.created_at.asc())
+        )
 
-        这里使用“先查候选，再条件 UPDATE”的方式实现轻量并发控制。
-        即使多个 worker 同时查到同一个 job，也只有一个 worker 的 UPDATE 会成功。
-        """
+        return list(self.db.execute(stmt).scalars().all())
+
+    def get_latest_by_task(self, task_id: str) -> TaskJobModel | None:
+        stmt = (
+            select(TaskJobModel)
+            .where(TaskJobModel.task_id == task_id)
+            .order_by(TaskJobModel.created_at.desc())
+            .limit(1)
+        )
+
+        return self.db.scalar(stmt)
+
+    def list_recent(
+        self,
+        limit: int = 50,
+        status: str | None = None,
+    ) -> list[TaskJobModel]:
+        stmt = select(TaskJobModel)
+
+        if status:
+            stmt = stmt.where(TaskJobModel.status == status)
+
+        stmt = stmt.order_by(TaskJobModel.created_at.desc()).limit(limit)
+
+        return list(self.db.execute(stmt).scalars().all())
+
+    def claim_next_pending_job(self) -> TaskJobModel | None:
         candidate = self.db.scalar(
             select(TaskJobModel)
             .where(TaskJobModel.status == TaskJobStatus.PENDING.value)
@@ -119,11 +146,6 @@ class TaskJobRepository:
         job_id: str,
         error_message: str,
     ) -> TaskJobModel:
-        """
-        执行失败时优先重试。
-        retry_count < max_retries 时重新放回 PENDING。
-        否则标记 FAILED。
-        """
         job = self.get_by_id(job_id)
 
         if job is None:
@@ -150,10 +172,6 @@ class TaskJobRepository:
         return job
 
     def cancel_pending_by_task(self, task_id: str) -> int:
-        """
-        取消某个任务尚未执行的 PENDING job。
-        已经 RUNNING 的 job 不能靠这里强行中断，只能靠 runner 内部检查取消状态。
-        """
         now = datetime.utcnow()
 
         stmt = (

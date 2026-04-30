@@ -123,6 +123,14 @@ class TaskRepository:
 
         result = self.db.execute(stmt)
         return result.rowcount == 1
+    
+    def get_model_by_id(self, task_id: str) -> TaskModel:
+        model = self.db.get(TaskModel, task_id)
+
+        if not model:
+            raise NotFoundException(f"Task not found: {task_id}")
+
+        return model
 
     @staticmethod
     def _to_entity(model: TaskModel) -> TaskEntity:
@@ -134,6 +142,8 @@ class TaskRepository:
             source_chat_id=model.source_chat_id,
             source_message_id=model.source_message_id,
             creator_id=model.creator_id,
+            confirmed_by=getattr(model, "confirmed_by", None),
+            confirmed_at=getattr(model, "confirmed_at", None),
             status=TaskStatus(model.status),
             progress=model.progress,
             current_step=model.current_step,
