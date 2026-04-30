@@ -14,6 +14,8 @@ class TaskModel(Base):
     source_chat_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     source_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     creator_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    confirmed_by: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     progress: Mapped[int] = mapped_column(Integer, default=0)
     current_step: Mapped[str] = mapped_column(Text, default="任务已创建")

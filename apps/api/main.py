@@ -6,6 +6,7 @@ from apps.api.app.routers.feishu_event_router import router as feishu_event_rout
 from apps.api.app.middlewares.error_handler import register_exception_handlers
 from packages.infrastructure.db.database import init_db
 from apps.api.app.routers.task_action_router import router as task_action_router
+from packages.application.task_worker_service import task_worker_service
 
 
 app = FastAPI(title="IM-Agent API")
@@ -21,3 +22,9 @@ app.include_router(task_action_router, prefix="/api")
 @app.on_event("startup")
 def on_startup():
     init_db()
+    task_worker_service.start_background()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    task_worker_service.stop()

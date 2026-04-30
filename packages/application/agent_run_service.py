@@ -2,7 +2,7 @@ import asyncio
 import threading
 from typing import Any
 
-from packages.agent.runtime.agent_runtime import AgentRuntime
+from packages.agent.graph.langgraph_task_runner import LangGraphTaskRunner
 from packages.domain.task.task_status import TaskStatus
 from packages.infrastructure.db.database import SessionLocal
 from packages.infrastructure.db.repositories.agent_action_repository import AgentActionRepository
@@ -37,7 +37,7 @@ class AgentRunService:
         try:
             task_repo = TaskRepository(db)
             notify_service = TaskNotifyService()
-            runtime = AgentRuntime(db)
+            runner = LangGraphTaskRunner(db)
 
             task = task_repo.get_by_id(task_id)
             if task is None:
@@ -50,7 +50,7 @@ class AgentRunService:
                     task=task,
                 )
 
-            result = await runtime.run(task_id)
+            result = await runner.run(task_id)
 
             db.commit()
 

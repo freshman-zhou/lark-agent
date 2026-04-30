@@ -1,4 +1,5 @@
-from sqlalchemy import select
+from datetime import datetime
+from sqlalchemy import select,update
 from sqlalchemy.orm import Session
 from packages.domain.task.task_entity import TaskEntity
 from packages.domain.task.task_status import TaskSourceType, TaskStatus, TaskType
@@ -74,6 +75,54 @@ class TaskRepository:
         self.db.commit()
         self.db.refresh(model)
         return self._to_entity(model)
+
+    def confirm_to_queued(
+        self,
+        task_id: str,
+        confirmed_by: str | None = None,
+    ) -> bool:
+        """
+        原子确认任务。
+
+        只有 WAITING_CONFIRM 状态可以被更新为 QUEUED。
+        返回 True 表示当前请求确认成功。
+        返回 False 表示任务已经被别人确认、取消或执行。
+        """
+        stmt = (
+            update(TaskModel)
+            .where(TaskModel.id == task_id)
+            .where(TaskModel.status == TaskStatus.WAITING_CONFIRM.value)
+            .values(
+                status=TaskStatus.QUEUED.value,
+                current_step="任务已确认，等待执行",
+                progress=5,
+                confirmed_by=confirmed_by,
+                confirmed_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+        )
+
+        result = self.db.execute(stmt)
+        return result.rowcount == 1
+
+    def mark_running_if_queued(self, task_id: str) -> bool:
+        """
+        worker 领取任务后，将 task 从 QUEUED 改为 RUNNING。
+        """
+        stmt = (
+            update(TaskModel)
+            .where(TaskModel.id == task_id)
+            .where(TaskModel.status == TaskStatus.QUEUED.value)
+            .values(
+                status=TaskStatus.RUNNING.value,
+                current_step="任务已被 worker 领取，开始执行",
+                progress=10,
+                updated_at=datetime.utcnow(),
+            )
+        )
+
+        result = self.db.execute(stmt)
+        return result.rowcount == 1
 
     @staticmethod
     def _to_entity(model: TaskModel) -> TaskEntity:

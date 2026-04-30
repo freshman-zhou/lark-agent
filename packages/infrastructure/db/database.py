@@ -15,8 +15,9 @@ class Base(DeclarativeBase):
 
 def init_db() -> None:
     # Import models before create_all.
-    from packages.infrastructure.db.models.task_model import TaskModel  # noqa: F401
-    from packages.infrastructure.db.models.agent_action_model import AgentActionModel  # noqa: F401
+    from packages.infrastructure.db.models.task_model import TaskModel  
+    from packages.infrastructure.db.models.agent_action_model import AgentActionModel  
+    from packages.infrastructure.db.models.task_job_model import TaskJobModel  
 
     Base.metadata.create_all(bind=engine)
 

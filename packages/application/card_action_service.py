@@ -34,7 +34,7 @@ class CardActionService:
             }
 
         if dto.action == "confirm_task":
-            result = await self.task_action_service.confirm_and_start(dto.task_id)
+            result = await self.task_action_service.confirm_and_start(dto.task_id,confirmed_by=dto.operator_id)
             return {
                 "ok": True,
                 "message": "任务已确认，Agent 正在后台执行",

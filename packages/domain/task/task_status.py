@@ -7,6 +7,10 @@ class TaskStatus(str, Enum):
     #PLANNING = "PLANNING"
     WAITING_CONFIRM = "WAITING_CONFIRM"
     CONFIRMED = "CONFIRMED"
+
+    # 新增：确认后进入队列，等待 worker 领取
+    QUEUED = "QUEUED"
+
     RUNNING = "RUNNING"
 
     WAITING_USER_INPUT = "WAITING_USER_INPUT"
@@ -24,7 +28,6 @@ class TaskStatus(str, Enum):
     SLIDE_READY = "SLIDE_READY"
     DELIVERING = "DELIVERING"
     DELIVERED = "DELIVERED"
-    
 
 
 class TaskType(str, Enum):
@@ -39,9 +42,19 @@ class TaskSourceType(str, Enum):
     FEISHU_IM = "FEISHU_IM"
     WEB_WORKBENCH = "WEB_WORKBENCH"
 
-
 class AgentActionStatus(str, Enum):
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     SKIPPED = "SKIPPED"
+
+class TaskJobType(str, Enum):
+    RUN_LANGGRAPH = "RUN_LANGGRAPH"
+
+class TaskJobStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    RETRYING = "RETRYING"
+    CANCELLED = "CANCELLED"
