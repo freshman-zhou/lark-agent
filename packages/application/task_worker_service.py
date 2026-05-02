@@ -9,6 +9,7 @@ from packages.infrastructure.db.database import SessionLocal
 from packages.infrastructure.db.repositories.agent_action_repository import AgentActionRepository
 from packages.infrastructure.db.repositories.task_job_repository import TaskJobRepository
 from packages.infrastructure.db.repositories.task_repository import TaskRepository
+from packages.application.task_card_refresh_service import TaskCardRefreshService
 from packages.shared.logger import get_logger
 
 logger = get_logger(__name__)
@@ -71,6 +72,7 @@ class TaskWorkerService:
         try:
             task_repository = TaskRepository(db)
             job_repository = TaskJobRepository(db)
+            card_refresh_service = TaskCardRefreshService(db)
 
             job = job_repository.claim_next_pending_job()
 
@@ -115,6 +117,10 @@ class TaskWorkerService:
                 return True
 
             db.commit()
+            await card_refresh_service.refresh_execution_card_by_task_id(
+                task_id=job.task_id,
+                force=True,
+            )
 
             task = task_repository.get_by_id(job.task_id)
 
@@ -126,7 +132,17 @@ class TaskWorkerService:
                     task=task,
                 )
 
-            runner = LangGraphTaskRunner(db)
+            async def on_langgraph_progress(task_id: str) -> None:
+                await card_refresh_service.refresh_execution_card_by_task_id(
+                    task_id=task_id,
+                    force=False,
+                )
+
+            runner = LangGraphTaskRunner(
+                db=db,
+                on_progress=on_langgraph_progress,
+            )
+
             runtime_result = await runner.run(job.task_id)
 
             db.commit()
@@ -143,12 +159,10 @@ class TaskWorkerService:
             if refreshed_status == TaskStatus.COMPLETED:
                 job_repository.mark_success(job.id)
 
-                if refreshed_task.source_chat_id:
-                    await notify_service.send_result_to_chat(
-                        chat_id=refreshed_task.source_chat_id,
-                        task=refreshed_task,
-                        result=final_result,
-                    )
+                await card_refresh_service.refresh_execution_card_by_task_id(
+                    task_id=job.task_id,
+                    force=True,
+                )
 
                 return True
 
@@ -167,6 +181,10 @@ class TaskWorkerService:
                     progress=5,
                     error_message=error_message,
                 )
+                await card_refresh_service.refresh_execution_card_by_task_id(
+                    task_id=job.task_id,
+                    force=True,
+                )
             else:
                 task_repository.update_status(
                     task_id=job.task_id,
@@ -176,12 +194,10 @@ class TaskWorkerService:
                     error_message=error_message,
                 )
 
-                if refreshed_task.source_chat_id:
-                    await notify_service.send_failed_to_chat(
-                        chat_id=refreshed_task.source_chat_id,
-                        task=refreshed_task,
-                        error_message=error_message,
-                    )
+                await card_refresh_service.refresh_execution_card_by_task_id(
+                    task_id=job.task_id,
+                    force=True,
+                )
 
             return True
 

@@ -5,7 +5,7 @@ from typing import Any
 from langgraph.graph import END, START, StateGraph
 from sqlalchemy.orm import Session
 
-from packages.agent.graph.skill_node import SkillNodeExecutor
+from packages.agent.graph.skill_node import ProgressCallback, SkillNodeExecutor
 from packages.agent.graph.task_state import TaskGraphState
 from packages.domain.task.task_status import TaskStatus
 from packages.infrastructure.db.repositories.task_repository import TaskRepository
@@ -14,7 +14,11 @@ from packages.shared.logger import get_logger
 logger = get_logger(__name__)
 
 
-def build_task_graph(db: Session):
+def build_task_graph(
+        db: Session,
+        on_progress: ProgressCallback | None = None,
+        checkpointer: Any | None = None,
+    ):
     """
     第一版 LangGraph 任务执行图。
 
@@ -30,7 +34,7 @@ def build_task_graph(db: Session):
     """
 
     task_repository = TaskRepository(db)
-    skill_executor = SkillNodeExecutor(db)
+    skill_executor = SkillNodeExecutor(db, on_progress=on_progress)
 
     async def load_task_node(state: TaskGraphState) -> TaskGraphState:
         task_id = state["task_id"]
@@ -290,7 +294,7 @@ def build_task_graph(db: Session):
     graph.add_edge("finish", END)
     graph.add_edge("fail", END)
 
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
 
 
 def _enum_value(value: Any) -> str:

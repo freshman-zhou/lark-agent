@@ -1,5 +1,7 @@
 # packages/agent/graph/skill_node.py
 
+from collections.abc import Awaitable, Callable
+from inspect import isawaitable
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -14,6 +16,8 @@ from packages.shared.logger import get_logger
 
 logger = get_logger(__name__)
 
+ProgressCallback = Callable[[TaskGraphState], Awaitable[None] | None]
+
 
 class SkillNodeExecutor:
     """
@@ -25,8 +29,13 @@ class SkillNodeExecutor:
     3. 继续通过 tasks.status / current_step / progress 暴露任务进度。
     """
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        on_progress: ProgressCallback | None = None,
+    ):
         self.db = db
+        self.on_progress = on_progress
         self.task_repository = TaskRepository(db)
         self.action_repository = AgentActionRepository(db)
         self.skill_registry = SkillRegistry()
@@ -61,6 +70,14 @@ class SkillNodeExecutor:
                 skill_name=skill_name,
                 input_json={},
             )
+            self.task_repository.update_status(
+                task_id=task_id,
+                status=TaskStatus.RUNNING,
+                current_step=f"正在执行：{skill_name}",
+                progress=progress_after_success,
+            )
+
+            #await self._notify_progress(task_id)
 
             logger.info(
                 "LangGraph run skill: task_id=%s skill=%s",
@@ -96,21 +113,22 @@ class SkillNodeExecutor:
                     error_message=error_message,
                 )
 
-                return {
+                failed_state = {
                     **state,
                     "status": TaskStatus.FAILED.value,
                     "error": error_message,
                     "message": result.message or error_message,
                     "memory": context.memory,
                 }
+                await self._emit_progress(failed_state)
+                return failed_state
 
             self.action_repository.mark_success(
                 action_id=action.id,
                 output_json=output_json,
             )
 
-            # Skill 内部已经可能写入 context.memory；
-            # 这里再把 result.data 同步进去，兼容旧 AgentRuntime 的行为。
+            
             if result.data:
                 for key, value in result.data.items():
                     context.memory[key] = value
@@ -125,7 +143,7 @@ class SkillNodeExecutor:
                 progress=progress_after_success,
             )
 
-            return {
+            success_state = {
                 **state,
                 "status": TaskStatus.RUNNING.value,
                 "current_step": f"已完成：{skill_name}",
@@ -135,6 +153,8 @@ class SkillNodeExecutor:
                 "error": None,
                 "message": result.message,
             }
+            await self._emit_progress(success_state)
+            return success_state
 
         except Exception as exc:
             logger.exception(
@@ -172,12 +192,24 @@ class SkillNodeExecutor:
             except Exception:
                 logger.exception("Failed to update task failed status")
 
-            return {
+            failed_state = {
                 **state,
                 "status": TaskStatus.FAILED.value,
                 "error": error_message,
                 "message": error_message,
             }
+            await self._emit_progress(failed_state)
+            return failed_state
+
+    async def _emit_progress(self, state: TaskGraphState) -> None:
+        if self.on_progress is None:
+            return
+
+        #result = self.on_progress(state)
+        task_id = state["task_id"]
+        result = self.on_progress(task_id)
+        if isawaitable(result):
+            await result
 
     @staticmethod
     def _skill_to_action_name(skill_name: str) -> str:

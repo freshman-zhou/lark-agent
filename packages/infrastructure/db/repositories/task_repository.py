@@ -25,6 +25,8 @@ class TaskRepository:
             source_type=task.source_type.value if isinstance(task.source_type, TaskSourceType) else str(task.source_type),
             source_chat_id=task.source_chat_id,
             source_message_id=task.source_message_id,
+            status_card_message_id=task.status_card_message_id,
+            execution_card_message_id=task.execution_card_message_id,
             creator_id=task.creator_id,
             status=task.status.value if isinstance(task.status, TaskStatus) else str(task.status),
             progress=task.progress,
@@ -131,6 +133,58 @@ class TaskRepository:
             raise NotFoundException(f"Task not found: {task_id}")
 
         return model
+    
+    def update_status_card_message_id(
+        self,
+        task_id: str,
+        status_card_message_id: str,
+    ) -> TaskEntity:
+        model = self.db.get(TaskModel, task_id)
+
+        if not model:
+            raise NotFoundException(f"Task not found: {task_id}")
+
+        model.status_card_message_id = status_card_message_id
+
+        self.db.commit()
+        self.db.refresh(model)
+
+        return self._to_entity(model)
+
+
+    def get_status_card_message_id(self, task_id: str) -> str | None:
+        model = self.db.get(TaskModel, task_id)
+
+        if not model:
+            raise NotFoundException(f"Task not found: {task_id}")
+
+        return getattr(model, "status_card_message_id", None)
+    
+    def update_execution_card_message_id(
+        self,
+        task_id: str,
+        execution_card_message_id: str,
+    ) -> TaskEntity:
+        model = self.db.get(TaskModel, task_id)
+
+        if not model:
+            raise NotFoundException(f"Task not found: {task_id}")
+
+        model.execution_card_message_id = execution_card_message_id
+
+        self.db.commit()
+        self.db.refresh(model)
+
+        return self._to_entity(model)
+
+
+    def get_execution_card_message_id(self, task_id: str) -> str | None:
+        model = self.db.get(TaskModel, task_id)
+
+        if not model:
+            raise NotFoundException(f"Task not found: {task_id}")
+
+        return getattr(model, "execution_card_message_id", None)
 
     @staticmethod
     def _to_entity(model: TaskModel) -> TaskEntity:
@@ -141,6 +195,8 @@ class TaskRepository:
             source_type=TaskSourceType(model.source_type),
             source_chat_id=model.source_chat_id,
             source_message_id=model.source_message_id,
+            status_card_message_id=getattr(model, "status_card_message_id", None),
+            execution_card_message_id=getattr(model, "execution_card_message_id", None),
             creator_id=model.creator_id,
             confirmed_by=getattr(model, "confirmed_by", None),
             confirmed_at=getattr(model, "confirmed_at", None),

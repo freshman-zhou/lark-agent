@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 from packages.application.task_action_service import TaskActionService
 from packages.application.task_notify_service import TaskNotifyService
 from packages.application.task_service import TaskService
+from packages.application.task_card_refresh_service import TaskCardRefreshService
 from packages.integrations.feishu.auth.signature_verify import verify_verification_token
 from packages.integrations.feishu.card.card_builder import CardBuilder
 from packages.integrations.feishu.event.feishu_event_dto import FeishuMessageEventDTO
 from packages.integrations.feishu.event.webhook_event_normalizer import WebhookEventNormalizer
 from packages.integrations.feishu.im.event_parser import FeishuEventParser
 from packages.integrations.feishu.im.message_api import FeishuMessageApi
+from packages.infrastructure.db.repositories.task_repository import TaskRepository
 from packages.shared.logger import get_logger
 
 logger = get_logger(__name__)
@@ -31,6 +33,7 @@ class FeishuEventService:
         self.message_api = FeishuMessageApi()
         self.task_action_service = TaskActionService(db)
         self.notify_service = TaskNotifyService()
+        self.task_repository = TaskRepository(db)
     
     #处理消息  理解消息识别意图并生成任务。  v1版本只做简单触发
     async def handle_message_event(self, event: FeishuMessageEventDTO) -> dict:
@@ -57,6 +60,11 @@ class FeishuEventService:
             result = await self.task_action_service.confirm_and_run(
                 task_id=confirm_task_id,
                 confirmed_by=event.sender_id,
+            )
+            await TaskCardRefreshService(self.db).create_execution_card_once(
+                task_id=confirm_task_id,
+                chat_id=event.chat_id,
+                force_refresh_if_exists=True,
             )
             await self.message_api.reply_text(
                 message_id=event.message_id,
@@ -94,10 +102,20 @@ class FeishuEventService:
                 message_id=event.message_id,
                 task=task,
             )
+
+            # status_card_message_id = FeishuMessageApi.extract_message_id(response)
+
+            # if status_card_message_id:
+            #     self.task_repository.update_status_card_message_id(
+            #         task_id=task.id,
+            #         status_card_message_id=status_card_message_id,
+            #     )
+
         except Exception as exc:
             logger.exception("Failed to send preview card, fallback to text: %s", exc)
 
             preview = task.plan_json or {}
+
             reply_text = CardBuilder.task_preview_text(
                 task_id=task.id,
                 title=task.title,

@@ -13,6 +13,8 @@ class TaskModel(Base):
     source_type: Mapped[str] = mapped_column(String(64), default="FEISHU_IM")
     source_chat_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     source_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    status_card_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    execution_card_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     creator_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     confirmed_by: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

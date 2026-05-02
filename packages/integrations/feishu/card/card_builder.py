@@ -77,4 +77,5 @@ class CardBuilder:
             f"状态：{result.get('status')}\n"
             f"Job 状态：{result.get('job_status', '-')}\n"
             f"说明：{result.get('message', '')}"
+            "任务执行状态会在单独的任务执行卡片中更新。"
         )

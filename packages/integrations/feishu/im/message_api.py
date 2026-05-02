@@ -149,3 +149,59 @@ class FeishuMessageApi:
 
         logger.info("Feishu API success: action=%s", action)
         return data
+    
+    async def update_card_message(
+        self,
+        message_id: str,
+        card: dict[str, Any],
+    ) -> dict:
+        """
+        更新机器人已经发送的消息卡片。
+        """
+        if not message_id:
+            raise FeishuMessageException("message_id is required")
+
+        token = await self.token_manager.get_tenant_access_token()
+
+        url = f"{self.settings.feishu_base_url}/im/v1/messages/{message_id}"
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json; charset=utf-8",
+        }
+
+        body = {
+            "content": json.dumps(card, ensure_ascii=False),
+        }
+
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.patch(
+                url,
+                headers=headers,
+                json=body,
+            )
+
+        return self._parse_feishu_response(
+            response=response,
+            action="update_card_message",
+        )
+
+
+    @staticmethod
+    def extract_message_id(response: dict[str, Any] | None) -> str | None:
+        """
+        从飞书发送 / 回复消息响应中提取机器人消息 ID。
+        """
+        if not response:
+            return None
+
+        data = response.get("data") or {}
+
+        if not isinstance(data, dict):
+            return None
+
+        return (
+            data.get("message_id")
+            or data.get("open_message_id")
+            or data.get("messageId")
+        )

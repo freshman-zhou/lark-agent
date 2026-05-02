@@ -250,6 +250,8 @@ class TaskExecutionViewService:
             "source_type": TaskExecutionViewService._value(task.source_type),
             "source_chat_id": task.source_chat_id,
             "source_message_id": task.source_message_id,
+            "status_card_message_id": getattr(task, "status_card_message_id", None),
+            "execution_card_message_id": getattr(task, "execution_card_message_id", None),
             "creator_id": task.creator_id,
             "confirmed_by": getattr(task, "confirmed_by", None),
             "confirmed_at": TaskExecutionViewService._dt(

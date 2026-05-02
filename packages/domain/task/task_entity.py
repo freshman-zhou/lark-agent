@@ -16,6 +16,8 @@ class TaskEntity:
     updated_at: datetime
     source_chat_id: str | None = None
     source_message_id: str | None = None
+    status_card_message_id: str | None = None
+    execution_card_message_id: str | None = None
     creator_id: str | None = None
     confirmed_by: str | None = None
     confirmed_at: datetime | None = None
