@@ -25,6 +25,19 @@ class TaskNotifyService:
             card=card,
         )
 
+    async def send_preview_to_chat(self, chat_id: str, task: TaskModel) -> dict:
+        card = TaskPreviewCard.build(
+            task_id=task.id,
+            title=task.title,
+            task_type=task.task_type,
+            preview=task.plan_json or {},
+        )
+
+        return await self.message_api.send_card_to_chat(
+            chat_id=chat_id,
+            card=card,
+        )
+
     async def send_progress_to_chat(self, chat_id: str, task: TaskModel) -> dict:
         card = TaskProgressCard.build(
             task_id=task.id,

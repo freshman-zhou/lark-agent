@@ -13,9 +13,12 @@ class FeishuMessageEventDTO:
     event_type: str | None
     message_id: str
     chat_id: str
+    chat_type: str | None
     sender_id: str
     message_type: str
     content: str
+    mentions: list[dict[str, Any]]
+    is_mention_bot: bool
     raw_event: dict[str, Any]
 
     def is_valid_text_command(self) -> bool:

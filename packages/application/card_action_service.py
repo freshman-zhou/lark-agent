@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from packages.application.task_communication_service import TaskCommunicationService
 from packages.integrations.feishu.event.card_action_normalizer import FeishuCardActionDTO
+from packages.passive_listener.action_service import PassiveSuggestionActionService
 from packages.shared.logger import get_logger
 
 
@@ -25,12 +26,15 @@ class CardActionService:
     def __init__(self, db: Session):
         self.db = db
         self.communication_service = TaskCommunicationService(db)
+        self.passive_suggestion_action_service = PassiveSuggestionActionService(db)
 
     async def handle_card_action(self, dto: FeishuCardActionDTO) -> dict:
         logger.info(
-            "Handle card action: action=%s task_id=%s operator=%s chat_id=%s",
+            "Handle card action: action=%s task_id=%s suggestion_id=%s "
+            "operator=%s chat_id=%s",
             dto.action,
             dto.task_id,
+            dto.suggestion_id,
             dto.operator_id,
             dto.open_chat_id,
         )
@@ -40,6 +44,32 @@ class CardActionService:
                 "ok": False,
                 "message": "缺少 action",
             }
+
+        if dto.action == "create_task_preview_from_suggestion":
+            if not dto.suggestion_id:
+                return {
+                    "ok": False,
+                    "message": "缺少 suggestion_id",
+                }
+
+            return await self.passive_suggestion_action_service.create_task_preview(
+                suggestion_id=dto.suggestion_id,
+                operator_id=dto.operator_id,
+                chat_id=dto.open_chat_id,
+                card_message_id=dto.open_message_id,
+            )
+
+        if dto.action == "ignore_task_suggestion":
+            if not dto.suggestion_id:
+                return {
+                    "ok": False,
+                    "message": "缺少 suggestion_id",
+                }
+
+            return await self.passive_suggestion_action_service.ignore_suggestion(
+                suggestion_id=dto.suggestion_id,
+                card_message_id=dto.open_message_id,
+            )
 
         if not dto.task_id:
             return {

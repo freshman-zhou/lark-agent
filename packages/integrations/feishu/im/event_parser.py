@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from dataclasses import dataclass
 
@@ -9,9 +10,12 @@ class FeishuMessageEvent:
     event_type: str | None
     message_id: str
     chat_id: str
+    chat_type: str | None
     sender_id: str
     message_type: str
     content: str
+    mentions: list[dict]
+    is_mention_bot: bool
     raw: dict
 
 
@@ -44,17 +48,21 @@ class FeishuEventParser:
         )
 
         raw_content = message.get("content", "")
+        mentions = message.get("mentions", []) or []
         text = FeishuEventParser._extract_text(raw_content)
-        text = FeishuEventParser._remove_bot_mention_text(text, message.get("mentions", []))
+        text = FeishuEventParser._remove_bot_mention_text(text, mentions)
 
         return FeishuMessageEvent(
             event_id=header.get("event_id"),
             event_type=event_type,
             message_id=message.get("message_id", ""),
             chat_id=message.get("chat_id", ""),
+            chat_type=message.get("chat_type"),
             sender_id=sender_id,
             message_type=message.get("message_type", ""),
             content=text.strip(),
+            mentions=mentions,
+            is_mention_bot=FeishuEventParser._is_mention_bot(mentions),
             raw=payload,
         )
 
@@ -97,3 +105,32 @@ class FeishuEventParser:
         # 清理类似 @_user_1 这种占位。
         cleaned = re.sub(r"@_user_\d+", "", cleaned)
         return cleaned.strip()
+
+    @staticmethod
+    def _is_mention_bot(mentions: list[dict]) -> bool:
+        if not mentions:
+            return False
+
+        configured_open_id = os.getenv("FEISHU_BOT_OPEN_ID", "")
+        configured_name = os.getenv("FEISHU_BOT_NAME", "")
+
+        # 如果没有配置 bot 身份，先把“消息中存在 mention”作为显式触发。
+        # 这适合开发阶段：飞书通常只会把 @ 机器人消息投递给机器人。
+        if not configured_open_id and not configured_name:
+            return True
+
+        for mention in mentions:
+            mention_id = (
+                mention.get("id", {}).get("open_id")
+                if isinstance(mention.get("id"), dict)
+                else mention.get("id")
+            )
+            mention_name = mention.get("name") or mention.get("user_name")
+
+            if configured_open_id and mention_id == configured_open_id:
+                return True
+
+            if configured_name and mention_name == configured_name:
+                return True
+
+        return False

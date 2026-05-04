@@ -47,6 +47,38 @@ class TaskService:
 
         return self.repository.create(task)
 
+    def create_preview_from_passive_suggestion(
+        self,
+        content: str,
+        chat_id: str,
+        suggestion_id: str,
+        creator_id: str | None = None,
+    ) -> TaskModel:
+        command = self._clean_command(content)
+
+        preview = self.preview_agent.generate_preview(command)
+
+        task = TaskModel(
+            id=self._generate_task_id(),
+            title=preview["title"],
+            task_type=preview["task_type"],
+            status=TaskStatus.WAITING_CONFIRM.value,
+            source_type=TaskSourceType.FEISHU_PASSIVE_LISTENER.value,
+            source_chat_id=chat_id,
+            source_message_id=suggestion_id,
+            creator_id=creator_id,
+            progress=0,
+            current_step="已根据被动监听建议生成任务预览，等待用户确认",
+            plan_json={
+                **preview,
+                "source_suggestion_id": suggestion_id,
+            },
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+
+        return self.repository.create(task)
+
     def create_from_feishu_message(
         self,
         content: str,

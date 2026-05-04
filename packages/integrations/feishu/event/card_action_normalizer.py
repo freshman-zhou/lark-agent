@@ -9,6 +9,7 @@ import lark_oapi as lark
 class FeishuCardActionDTO:
     action: str
     task_id: str | None
+    suggestion_id: str | None
     operator_id: str | None
     open_message_id: str | None
     open_chat_id: str | None
@@ -61,6 +62,7 @@ class CardActionNormalizer:
         return FeishuCardActionDTO(
             action=value.get("action", ""),
             task_id=value.get("task_id"),
+            suggestion_id=value.get("suggestion_id"),
             operator_id=operator_id,
             open_message_id=open_message_id,
             open_chat_id=open_chat_id,

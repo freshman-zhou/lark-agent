@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import Any
 
 import httpx
@@ -72,6 +73,12 @@ class FeishuMessageApi:
         msg_type: str,
         content: dict[str, Any],
     ) -> dict:
+        if self.settings.feishu_mock_send:
+            return self._mock_message_response(
+                action=f"reply_message:{msg_type}",
+                source_message_id=message_id,
+            )
+
         token = await self.token_manager.get_tenant_access_token()
 
         url = f"{self.settings.feishu_base_url}/im/v1/messages/{message_id}/reply"
@@ -101,6 +108,12 @@ class FeishuMessageApi:
         msg_type: str,
         content: dict[str, Any],
     ) -> dict:
+        if self.settings.feishu_mock_send:
+            return self._mock_message_response(
+                action=f"send_message:{msg_type}",
+                receive_id=receive_id,
+            )
+
         token = await self.token_manager.get_tenant_access_token()
 
         url = (
@@ -161,6 +174,16 @@ class FeishuMessageApi:
         if not message_id:
             raise FeishuMessageException("message_id is required")
 
+        if self.settings.feishu_mock_send:
+            return {
+                "code": 0,
+                "msg": "mock ok",
+                "data": {
+                    "message_id": message_id,
+                    "open_message_id": message_id,
+                },
+            }
+
         token = await self.token_manager.get_tenant_access_token()
 
         url = f"{self.settings.feishu_base_url}/im/v1/messages/{message_id}"
@@ -205,3 +228,24 @@ class FeishuMessageApi:
             or data.get("open_message_id")
             or data.get("messageId")
         )
+
+    @staticmethod
+    def _mock_message_response(
+        *,
+        action: str,
+        source_message_id: str | None = None,
+        receive_id: str | None = None,
+    ) -> dict:
+        message_id = f"mock_{uuid.uuid4().hex[:12]}"
+
+        return {
+            "code": 0,
+            "msg": "mock ok",
+            "data": {
+                "message_id": message_id,
+                "open_message_id": message_id,
+                "action": action,
+                "source_message_id": source_message_id,
+                "receive_id": receive_id,
+            },
+        }

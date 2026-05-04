@@ -40,6 +40,7 @@ class TaskType(str, Enum):
 
 class TaskSourceType(str, Enum):
     FEISHU_IM = "FEISHU_IM"
+    FEISHU_PASSIVE_LISTENER = "FEISHU_PASSIVE_LISTENER"
     WEB_WORKBENCH = "WEB_WORKBENCH"
 
 class AgentActionStatus(str, Enum):

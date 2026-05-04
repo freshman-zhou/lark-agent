@@ -25,9 +25,12 @@ class LongConnectionEventNormalizer:
             event_type=event.event_type,
             message_id=event.message_id,
             chat_id=event.chat_id,
+            chat_type=event.chat_type,
             sender_id=event.sender_id,
             message_type=event.message_type,
             content=event.content,
+            mentions=event.mentions,
+            is_mention_bot=event.is_mention_bot,
             raw_event=event.raw,
         )
 

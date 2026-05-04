@@ -78,3 +78,53 @@ class TaskPreviewService:
             "task_id": task.id,
             "reply_type": reply_type,
         }
+
+    async def create_preview_from_passive_suggestion(
+        self,
+        *,
+        chat_id: str,
+        suggestion_id: str,
+        command: str,
+        creator_id: str | None = None,
+    ) -> dict:
+        task = self.task_service.create_preview_from_passive_suggestion(
+            content=command,
+            chat_id=chat_id,
+            suggestion_id=suggestion_id,
+            creator_id=creator_id,
+        )
+
+        try:
+            await self.notify_service.send_preview_to_chat(
+                chat_id=chat_id,
+                task=task,
+            )
+            reply_type = "card"
+
+        except Exception as exc:
+            logger.exception(
+                "Failed to send passive suggestion preview card, fallback to text: %s",
+                exc,
+            )
+
+            preview = task.plan_json or {}
+            reply_text = CardBuilder.task_preview_text(
+                task_id=task.id,
+                title=task.title,
+                task_type=task.task_type,
+                preview=preview,
+            )
+
+            await self.message_api.send_text_to_chat(
+                chat_id=chat_id,
+                text=reply_text,
+            )
+            reply_type = "text"
+
+        return {
+            "code": 0,
+            "message": "preview_created_from_suggestion",
+            "task_id": task.id,
+            "suggestion_id": suggestion_id,
+            "reply_type": reply_type,
+        }

@@ -11,6 +11,8 @@ from packages.integrations.feishu.event.feishu_event_dto import FeishuMessageEve
 class MessageIntent(str, Enum):
     EMPTY = "EMPTY"
     IGNORE = "IGNORE"
+    EXPLICIT_NEW_TASK = "EXPLICIT_NEW_TASK"
+    PASSIVE_LISTEN = "PASSIVE_LISTEN"
     NEW_TASK_REQUEST = "NEW_TASK_REQUEST"
     CONFIRM_TASK = "CONFIRM_TASK"
     CANCEL_TASK = "CANCEL_TASK"
@@ -45,9 +47,19 @@ class MessageTriageService:
     ) -> MessageTriageResult:
         text = self.normalize_message_content(event.content)
 
-        return self.triage_text(text)
+        return self.triage_text(
+            text,
+            is_explicit_trigger=event.is_mention_bot,
+            message_type=event.message_type,
+        )
 
-    def triage_text(self, text: str) -> MessageTriageResult:
+    def triage_text(
+        self,
+        text: str,
+        *,
+        is_explicit_trigger: bool = True,
+        message_type: str | None = "text",
+    ) -> MessageTriageResult:
         normalized_text = self.normalize_message_content(text)
 
         if not normalized_text:
@@ -55,6 +67,13 @@ class MessageTriageService:
                 intent=MessageIntent.EMPTY,
                 normalized_text="",
                 reason="empty message",
+            )
+
+        if not self._is_text_like_message(message_type):
+            return MessageTriageResult(
+                intent=MessageIntent.IGNORE,
+                normalized_text=normalized_text,
+                reason=f"unsupported message type: {message_type}",
             )
 
         confirm_task_id = self.extract_action_task_id(
@@ -101,10 +120,17 @@ class MessageTriageService:
             )
 
         if self._looks_like_new_task(normalized_text):
+            if is_explicit_trigger:
+                return MessageTriageResult(
+                    intent=MessageIntent.EXPLICIT_NEW_TASK,
+                    normalized_text=normalized_text,
+                    reason="explicit mention with new task request",
+                )
+
             return MessageTriageResult(
-                intent=MessageIntent.NEW_TASK_REQUEST,
+                intent=MessageIntent.PASSIVE_LISTEN,
                 normalized_text=normalized_text,
-                reason="looks like new task request",
+                reason="task-like message without explicit bot mention",
             )
 
         return MessageTriageResult(
@@ -228,3 +254,7 @@ class MessageTriageService:
         }
 
         return text in ignore_texts
+
+    @staticmethod
+    def _is_text_like_message(message_type: str | None) -> bool:
+        return (message_type or "").lower() in {"text", "post"}
