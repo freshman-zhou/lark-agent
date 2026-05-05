@@ -106,7 +106,11 @@ class FeishuEventService:
         self,
         event: FeishuMessageEventDTO,
     ) -> dict:
-        triage = self.triage_service.triage_feishu_message(event)
+        context_messages = self._build_recent_chat_context(event)
+        triage = self.triage_service.triage_feishu_message(
+            event,
+            context_messages=context_messages,
+        )
 
         logger.info(
             "Handle Feishu message event: chat_id=%s message_id=%s "
@@ -166,6 +170,40 @@ class FeishuEventService:
                 "event_handling_status": "IGNORED",
             }
 
+        if triage.intent == MessageIntent.NEED_CLARIFICATION:
+            await self.message_api.reply_text(
+                message_id=event.message_id,
+                text=self._build_clarification_text(triage),
+            )
+
+            return {
+                "code": 0,
+                "message": "clarification_requested",
+                "reason": triage.reason,
+                "confidence": triage.confidence,
+                "clarifying_questions": triage.clarifying_questions or [],
+                "event_handling_status": "IGNORED",
+            }
+
+        if triage.intent == MessageIntent.CHAT:
+            reply_text = await self._build_chat_reply(
+                event=event,
+                triage=triage,
+                context_messages=context_messages,
+            )
+            await self.message_api.reply_text(
+                message_id=event.message_id,
+                text=reply_text,
+            )
+
+            return {
+                "code": 0,
+                "message": "chat_replied",
+                "reason": triage.reason,
+                "confidence": triage.confidence,
+                "event_handling_status": "IGNORED",
+            }
+
         if triage.intent == MessageIntent.CONFIRM_TASK:
             return await self.communication_service.confirm_task(
                 task_id=triage.task_id,
@@ -210,19 +248,101 @@ class FeishuEventService:
                 "event_handling_status": "IGNORED",
             }
 
+        reply_text = await self._build_chat_reply(
+            event=event,
+            triage=triage,
+            context_messages=context_messages,
+        )
         await self.message_api.reply_text(
             message_id=event.message_id,
-            text=(
-                "我还没有识别出你的任务意图。\n"
-                "你可以这样说：帮我把刚才讨论整理成方案文档。"
-            ),
+            text=reply_text,
         )
 
         return {
             "code": 0,
-            "message": "unknown command",
+            "message": "unknown_replied",
             "command": triage.normalized_text,
+            "event_handling_status": "IGNORED",
         }
+
+    @staticmethod
+    def _build_clarification_text(triage) -> str:
+        questions = triage.clarifying_questions or [
+            "你希望我输出文档、PPT，还是只做讨论摘要？"
+        ]
+
+        question_text = "\n".join([f"- {question}" for question in questions])
+
+        return (
+            "我理解你可能想让我推进一个任务，但还差一点信息：\n"
+            f"{question_text}"
+        )
+
+    async def _build_chat_reply(
+        self,
+        *,
+        event: FeishuMessageEventDTO,
+        triage,
+        context_messages: list[dict],
+    ) -> str:
+        try:
+            from packages.agent.intent.explicit_chat_responder import (
+                ExplicitChatResponder,
+            )
+
+            responder = ExplicitChatResponder()
+            return await responder.reply(
+                text=triage.normalized_text or event.content,
+                context_messages=context_messages,
+                reason=triage.reason,
+            )
+
+        except Exception as exc:
+            logger.exception(
+                "Explicit chat responder failed: chat_id=%s message_id=%s",
+                event.chat_id,
+                event.message_id,
+            )
+            return (
+                "我在。这个看起来不像一个需要我立刻创建的任务。\n"
+                "如果你希望我继续推进，可以直接说：帮我整理成文档、生成 PPT，或者总结一下刚才讨论。"
+            )
+
+    def _build_recent_chat_context(
+        self,
+        event: FeishuMessageEventDTO,
+    ) -> list[dict]:
+        if not event.chat_id:
+            return []
+
+        try:
+            limit = self.triage_service.settings.explicit_chat_context_messages
+            messages = self.passive_listener_service.repository.list_recent_messages(
+                chat_id=event.chat_id,
+                window_minutes=self.triage_service.settings.passive_listener_window_minutes,
+                limit=limit,
+            )
+
+            return [
+                {
+                    "message_id": message.message_id,
+                    "sender_id": message.sender_id,
+                    "content": message.content,
+                    "created_at": message.created_at.isoformat()
+                    if message.created_at
+                    else None,
+                    "signal_score": message.signal_score,
+                }
+                for message in messages
+                if message.message_id != event.message_id
+            ]
+
+        except Exception:
+            logger.exception(
+                "Failed to build recent chat context: chat_id=%s",
+                event.chat_id,
+            )
+            return []
 
     def _capture_passive_message(
         self,

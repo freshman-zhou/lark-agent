@@ -19,6 +19,18 @@ class OpenAILLMClient(LLMClient):
         system_prompt: str,
         user_prompt: str,
     ) -> dict:
+        content = await self.chat_text(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+
+        return self._parse_json_content(content)
+
+    async def chat_text(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> str:
         if not self.settings.llm_base_url:
             raise AgentException("LLM_BASE_URL is empty")
 
@@ -90,7 +102,7 @@ class OpenAILLMClient(LLMClient):
                 detail=data,
             )
 
-        return self._parse_json_content(content)
+        return str(content).strip()
 
     @staticmethod
     def _parse_json_content(content: str) -> dict:
