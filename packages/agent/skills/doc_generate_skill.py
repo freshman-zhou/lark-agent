@@ -1,9 +1,14 @@
 from packages.agent.skills.base_skill import BaseSkill, SkillResult
+from packages.integrations.feishu.doc.document_cli_api import FeishuDocumentCliApi
+from packages.shared.exceptions import AppException
 
 
 class DocGenerateSkill(BaseSkill):
     name = "doc.generate"
-    description = "根据 discussion_summary 生成方案文档 Markdown。后续会接入飞书文档 API。"
+    description = "根据 discussion_summary 生成方案文档 Markdown，并创建飞书云文档。"
+
+    def __init__(self):
+        self.document_api = FeishuDocumentCliApi()
 
     async def run(self, params: dict, context) -> SkillResult:
         summary = context.memory.get("discussion_summary", {})
@@ -48,14 +53,49 @@ class DocGenerateSkill(BaseSkill):
 """
 
         context.memory["doc_markdown"] = doc_markdown
-        context.memory["doc_url"] = "mock://feishu-doc-url"
+
+        try:
+            document = await self.document_api.create_document(context.task.title)
+            append_result = await self.document_api.append_markdown(
+                document=document,
+                markdown=doc_markdown,
+            )
+        except AppException as exc:
+            return SkillResult(
+                success=False,
+                message="方案文档草稿已生成，但创建飞书云文档失败",
+                error=exc.message,
+                data={
+                    "doc_markdown": doc_markdown,
+                    "detail": exc.detail,
+                },
+            )
+        except Exception as exc:
+            return SkillResult(
+                success=False,
+                message="方案文档草稿已生成，但创建飞书云文档失败",
+                error=str(exc),
+                data={
+                    "doc_markdown": doc_markdown,
+                },
+            )
+
+        context.memory["document_id"] = document.document_id
+        context.memory["doc_token"] = document.doc_token
+        context.memory["doc_url"] = document.url
+        context.memory["doc_create_result"] = document.raw or {}
+        context.memory["doc_append_result"] = append_result
 
         return SkillResult(
             success=True,
-            message="已基于真实讨论总结生成方案文档草稿",
+            message="已基于真实讨论总结创建飞书方案文档",
             data={
                 "doc_markdown": doc_markdown,
-                "doc_url": "mock://feishu-doc-url",
+                "document_id": document.document_id,
+                "doc_token": document.doc_token,
+                "doc_url": document.url,
+                "doc_create_result": document.raw or {},
+                "doc_append_result": append_result,
             },
         )
 

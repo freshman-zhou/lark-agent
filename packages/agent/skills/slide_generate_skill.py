@@ -65,13 +65,11 @@ class SlideGenerateSkill(BaseSkill):
         }
 
         context.memory["slide_json"] = slide_json
-        context.memory["slide_url"] = "mock://slide-preview-url"
 
         return SkillResult(
             success=True,
-            message="已基于真实讨论总结生成 PPT 结构",
+            message="已基于真实讨论总结生成 PPT 结构，暂未创建在线演示稿",
             data={
                 "slide_json": slide_json,
-                "slide_url": "mock://slide-preview-url",
             },
         )

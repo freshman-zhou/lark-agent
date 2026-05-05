@@ -7,10 +7,21 @@ class DeliverySkill(BaseSkill):
 
     async def run(self, params: dict, context) -> SkillResult:
         result = {
-            "doc_url": context.memory.get("doc_url", "mock://feishu-doc-url"),
-            "slide_url": context.memory.get("slide_url", "mock://slide-preview-url"),
-            "summary": "任务已完成，已生成方案文档草稿和 PPT 结构。",
+            "summary": "任务已完成，已整理交付结果。",
         }
+
+        doc_url = context.memory.get("doc_url")
+        slide_url = context.memory.get("slide_url")
+        document_id = context.memory.get("document_id")
+
+        if doc_url:
+            result["doc_url"] = doc_url
+
+        if document_id:
+            result["document_id"] = document_id
+
+        if slide_url:
+            result["slide_url"] = slide_url
 
         context.memory["delivery_result"] = result
 
