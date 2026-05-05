@@ -1,9 +1,14 @@
 from packages.agent.skills.base_skill import BaseSkill, SkillResult
+from packages.integrations.feishu.slides.slides_cli_api import FeishuSlidesCliApi
+from packages.shared.exceptions import AppException
 
 
 class SlideGenerateSkill(BaseSkill):
     name = "slide.generate"
-    description = "根据 discussion_summary 和 doc_markdown 生成 PPT 结构。后续接入 PPT 渲染服务。"
+    description = "根据 discussion_summary 和 doc_markdown 生成 PPT 结构，并创建飞书演示稿。"
+
+    def __init__(self):
+        self.slides_api = FeishuSlidesCliApi()
 
     async def run(self, params: dict, context) -> SkillResult:
         summary = context.memory.get("discussion_summary", {})
@@ -66,10 +71,42 @@ class SlideGenerateSkill(BaseSkill):
 
         context.memory["slide_json"] = slide_json
 
+        try:
+            presentation = await self.slides_api.create_presentation(
+                title=context.task.title,
+                slide_json=slide_json,
+            )
+        except AppException as exc:
+            return SkillResult(
+                success=False,
+                message="PPT 结构已生成，但创建飞书演示稿失败",
+                error=exc.message,
+                data={
+                    "slide_json": slide_json,
+                    "detail": exc.detail,
+                },
+            )
+        except Exception as exc:
+            return SkillResult(
+                success=False,
+                message="PPT 结构已生成，但创建飞书演示稿失败",
+                error=str(exc),
+                data={
+                    "slide_json": slide_json,
+                },
+            )
+
+        context.memory["presentation_id"] = presentation.presentation_id
+        context.memory["slide_url"] = presentation.url
+        context.memory["slides_create_result"] = presentation.raw or {}
+
         return SkillResult(
             success=True,
-            message="已基于真实讨论总结生成 PPT 结构，暂未创建在线演示稿",
+            message="已基于真实讨论总结创建飞书演示稿",
             data={
                 "slide_json": slide_json,
+                "presentation_id": presentation.presentation_id,
+                "slide_url": presentation.url,
+                "slides_create_result": presentation.raw or {},
             },
         )

@@ -13,6 +13,7 @@ class DeliverySkill(BaseSkill):
         doc_url = context.memory.get("doc_url")
         slide_url = context.memory.get("slide_url")
         document_id = context.memory.get("document_id")
+        presentation_id = context.memory.get("presentation_id")
 
         if doc_url:
             result["doc_url"] = doc_url
@@ -22,6 +23,9 @@ class DeliverySkill(BaseSkill):
 
         if slide_url:
             result["slide_url"] = slide_url
+
+        if presentation_id:
+            result["presentation_id"] = presentation_id
 
         context.memory["delivery_result"] = result
 
