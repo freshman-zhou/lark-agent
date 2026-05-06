@@ -10,6 +10,7 @@ class ErrorCode(str, Enum):
     UNAUTHORIZED = "UNAUTHORIZED"
     FORBIDDEN = "FORBIDDEN"
     NOT_FOUND = "NOT_FOUND"
+    CONFLICT = "CONFLICT"
 
     FEISHU_ERROR = "FEISHU_ERROR"
     FEISHU_API_ERROR = "FEISHU_API_ERROR"
@@ -85,6 +86,16 @@ class NotFoundException(AppException):
             message=message,
             code=ErrorCode.NOT_FOUND,
             status_code=404,
+            detail=detail,
+        )
+
+
+class ConflictException(AppException):
+    def __init__(self, message: str = "Conflict", detail: Any | None = None):
+        super().__init__(
+            message=message,
+            code=ErrorCode.CONFLICT,
+            status_code=409,
             detail=detail,
         )
 

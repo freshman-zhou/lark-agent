@@ -19,6 +19,7 @@ def init_db() -> None:
     from packages.infrastructure.db.models.agent_action_model import AgentActionModel  
     from packages.infrastructure.db.models.task_job_model import TaskJobModel  
     from packages.infrastructure.db.models.processed_event_model import ProcessedEventModel  
+    from packages.infrastructure.db.models.artifact_model import ArtifactModel
     from packages.passive_listener.models import ListenerChatMessageModel
     from packages.passive_listener.models import ListenerDetectionRunModel
     from packages.passive_listener.models import ListenerTaskSuggestionModel

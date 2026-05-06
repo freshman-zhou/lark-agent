@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from packages.infrastructure.db.repositories.agent_action_repository import (
     AgentActionRepository,
 )
+from packages.infrastructure.db.repositories.artifact_repository import ArtifactRepository
 from packages.infrastructure.db.repositories.task_job_repository import TaskJobRepository
 from packages.infrastructure.db.repositories.task_repository import TaskRepository
 
@@ -27,11 +28,13 @@ class TaskExecutionViewService:
         self.task_repository = TaskRepository(db)
         self.task_job_repository = TaskJobRepository(db)
         self.action_repository = AgentActionRepository(db)
+        self.artifact_repository = ArtifactRepository(db)
 
     def get_execution_detail(self, task_id: str) -> dict[str, Any]:
         task_model = self.task_repository.get_model_by_id(task_id)
         jobs = self.task_job_repository.list_by_task(task_id)
         actions = self.action_repository.list_by_task(task_id)
+        artifacts = self.artifact_repository.list_by_task(task_id)
 
         serialized_jobs = [self._serialize_job(job) for job in jobs]
         serialized_actions = [self._serialize_action(action) for action in actions]
@@ -41,6 +44,7 @@ class TaskExecutionViewService:
             "latest_job": serialized_jobs[-1] if serialized_jobs else None,
             "jobs": serialized_jobs,
             "actions": serialized_actions,
+            "artifacts": [self._serialize_artifact(item) for item in artifacts],
             "delivery_result": self._extract_delivery_result(actions),
             "summary": self._build_summary(
                 task_model=task_model,
@@ -263,6 +267,24 @@ class TaskExecutionViewService:
             "plan_json": task.plan_json,
             "created_at": TaskExecutionViewService._dt(task.created_at),
             "updated_at": TaskExecutionViewService._dt(task.updated_at),
+        }
+
+    @staticmethod
+    def _serialize_artifact(artifact) -> dict[str, Any]:
+        return {
+            "id": artifact.id,
+            "task_id": artifact.task_id,
+            "artifact_type": artifact.artifact_type,
+            "title": artifact.title,
+            "status": artifact.status,
+            "revision": artifact.revision,
+            "source_action_id": artifact.source_action_id,
+            "last_edited_by": artifact.last_edited_by,
+            "reviewed_by": artifact.reviewed_by,
+            "reviewed_at": TaskExecutionViewService._dt(artifact.reviewed_at),
+            "feedback_text": artifact.feedback_text,
+            "created_at": TaskExecutionViewService._dt(artifact.created_at),
+            "updated_at": TaskExecutionViewService._dt(artifact.updated_at),
         }
 
     @staticmethod

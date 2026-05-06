@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from packages.agent.graph.task_state import TaskGraphState
 from packages.agent.runtime.agent_context import AgentContext
 from packages.agent.skills.skill_registry import SkillRegistry
+from packages.application.artifact_service import ArtifactService
 from packages.domain.task.task_status import TaskStatus
 from packages.infrastructure.db.repositories.agent_action_repository import AgentActionRepository
 from packages.infrastructure.db.repositories.task_repository import TaskRepository
@@ -38,6 +39,7 @@ class SkillNodeExecutor:
         self.on_progress = on_progress
         self.task_repository = TaskRepository(db)
         self.action_repository = AgentActionRepository(db)
+        self.artifact_service = ArtifactService(db)
         self.skill_registry = SkillRegistry()
 
     async def run_skill(
@@ -128,6 +130,12 @@ class SkillNodeExecutor:
                 output_json=output_json,
             )
 
+            self._capture_artifact_if_needed(
+                task_id=task_id,
+                skill_name=skill_name,
+                action_id=action.id,
+                output_json=output_json,
+            )
             
             if result.data:
                 for key, value in result.data.items():
@@ -214,3 +222,35 @@ class SkillNodeExecutor:
     @staticmethod
     def _skill_to_action_name(skill_name: str) -> str:
         return skill_name.replace(".", "_")
+
+    def _capture_artifact_if_needed(
+        self,
+        *,
+        task_id: str,
+        skill_name: str,
+        action_id: str,
+        output_json: dict[str, Any],
+    ) -> None:
+        try:
+            artifact = self.artifact_service.capture_skill_output(
+                task_id=task_id,
+                skill_name=skill_name,
+                action_id=action_id,
+                output_json=output_json,
+            )
+            if artifact is not None:
+                logger.info(
+                    "Captured collaborative artifact: task_id=%s skill=%s "
+                    "artifact_id=%s type=%s revision=%s",
+                    task_id,
+                    skill_name,
+                    artifact.id,
+                    artifact.artifact_type,
+                    artifact.revision,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to capture collaborative artifact: task_id=%s skill=%s",
+                task_id,
+                skill_name,
+            )

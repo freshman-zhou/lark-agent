@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent-Pilot Workbench</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --line: #dfe3ea;
+        --text: #172033;
+        --muted: #667085;
+        --brand: #1769e0;
+        --brand-dark: #0f55bd;
+        --ok: #07875d;
+        --warn: #b54708;
+        --bad: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 14px;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .topbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .brand {
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .task-form {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 10px;
+        background: #fff;
+        color: var(--text);
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 12px;
+        background: #fff;
+        color: var(--text);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      button.primary {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #fff;
+      }
+
+      button.primary:hover {
+        background: var(--brand-dark);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 360px) 1fr;
+        gap: 12px;
+        padding: 12px;
+        min-height: 0;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-title {
+        font-weight: 700;
+      }
+
+      .panel-body {
+        padding: 12px;
+      }
+
+      .task-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .meta {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 2px 8px;
+        background: #eef4ff;
+        color: #175cd3;
+        font-weight: 600;
+        width: fit-content;
+      }
+
+      .artifact-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .artifact-item {
+        text-align: left;
+        width: 100%;
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      .artifact-item.active {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px rgba(23, 105, 224, 0.12);
+      }
+
+      .artifact-name {
+        font-weight: 650;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .artifact-sub {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .editor {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        height: calc(100vh - 94px);
+      }
+
+      .editor-toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .editor-toolbar .spacer {
+        flex: 1;
+      }
+
+      textarea {
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        resize: none;
+        border: 0;
+        outline: none;
+        padding: 14px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #101828;
+        background: #fbfcfe;
+      }
+
+      .footer {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .toast {
+        color: var(--muted);
+      }
+
+      .toast.ok {
+        color: var(--ok);
+      }
+
+      .toast.warn {
+        color: var(--warn);
+      }
+
+      .toast.bad {
+        color: var(--bad);
+      }
+
+      @media (max-width: 820px) {
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .editor {
+          height: auto;
+          min-height: 62vh;
+        }
+
+        textarea {
+          min-height: 420px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">Agent-Pilot</div>
+        <form id="taskForm" class="task-form">
+          <input id="taskIdInput" placeholder="task_xxx" autocomplete="off" />
+          <button class="primary" type="submit">打开任务</button>
+        </form>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">任务</div>
+            <button id="refreshBtn" type="button">刷新</button>
+          </div>
+          <div class="panel-body">
+            <div id="taskInfo" class="meta">
+              <div class="hint">等待选择任务</div>
+            </div>
+          </div>
+          <div class="panel-head">
+            <div class="panel-title">产物</div>
+          </div>
+          <div class="panel-body">
+            <div id="artifactList" class="artifact-list"></div>
+          </div>
+        </section>
+
+        <section class="panel editor">
+          <div class="panel-head">
+            <div>
+              <div id="artifactTitle" class="panel-title">未选择产物</div>
+              <div id="artifactMeta" class="hint"></div>
+            </div>
+            <div class="editor-toolbar">
+              <button id="approveBtn" type="button" disabled>定稿</button>
+              <button id="regenBtn" type="button" disabled>重新生成</button>
+              <button id="saveBtn" class="primary" type="button" disabled>保存</button>
+            </div>
+          </div>
+          <textarea id="editor" spellcheck="false" disabled></textarea>
+          <div class="footer">
+            <div id="toast" class="toast">就绪</div>
+            <div id="syncState" class="hint">未连接</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        taskId: new URLSearchParams(location.search).get("task_id") || "",
+        task: null,
+        artifacts: [],
+        selectedArtifact: null,
+        eventSource: null,
+      };
+
+      const els = {
+        taskForm: document.getElementById("taskForm"),
+        taskIdInput: document.getElementById("taskIdInput"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        taskInfo: document.getElementById("taskInfo"),
+        artifactList: document.getElementById("artifactList"),
+        artifactTitle: document.getElementById("artifactTitle"),
+        artifactMeta: document.getElementById("artifactMeta"),
+        editor: document.getElementById("editor"),
+        saveBtn: document.getElementById("saveBtn"),
+        approveBtn: document.getElementById("approveBtn"),
+        regenBtn: document.getElementById("regenBtn"),
+        toast: document.getElementById("toast"),
+        syncState: document.getElementById("syncState"),
+      };
+
+      els.taskIdInput.value = state.taskId;
+
+      els.taskForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const taskId = els.taskIdInput.value.trim();
+        if (!taskId) return;
+        history.replaceState(null, "", `/workbench/?task_id=${encodeURIComponent(taskId)}`);
+        openTask(taskId);
+      });
+
+      els.refreshBtn.addEventListener("click", () => {
+        if (state.taskId) openTask(state.taskId);
+      });
+
+      els.saveBtn.addEventListener("click", saveArtifact);
+      els.approveBtn.addEventListener("click", approveArtifact);
+      els.regenBtn.addEventListener("click", requestRegenerate);
+
+      if (state.taskId) {
+        openTask(state.taskId);
+      }
+
+      async function openTask(taskId) {
+        state.taskId = taskId;
+        closeStream();
+        setToast("加载中");
+
+        const detail = await requestJson(`/api/tasks/${encodeURIComponent(taskId)}/execution`);
+        state.task = detail.task;
+        state.artifacts = detail.artifacts || [];
+
+        renderTask();
+        renderArtifacts();
+        openStream(taskId);
+        setToast("已同步", "ok");
+      }
+
+      function renderTask() {
+        if (!state.task) {
+          els.taskInfo.innerHTML = '<div class="hint">等待选择任务</div>';
+          return;
+        }
+
+        els.taskInfo.innerHTML = `
+          <div class="task-title">${escapeHtml(state.task.title || state.task.id)}</div>
+          <div><span class="status">${escapeHtml(state.task.status)}</span></div>
+          <div>进度：${Number(state.task.progress || 0)}%</div>
+          <div>步骤：${escapeHtml(state.task.current_step || "-")}</div>
+          <div>类型：${escapeHtml(state.task.task_type || "-")}</div>
+        `;
+      }
+
+      function renderArtifacts() {
+        els.artifactList.innerHTML = "";
+
+        if (!state.artifacts.length) {
+          els.artifactList.innerHTML = '<div class="hint">暂无可编辑产物</div>';
+          setSelectedArtifact(null);
+          return;
+        }
+
+        for (const artifact of state.artifacts) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "artifact-item";
+          if (state.selectedArtifact && state.selectedArtifact.id === artifact.id) {
+            button.classList.add("active");
+          }
+          button.innerHTML = `
+            <div class="artifact-name">${escapeHtml(artifact.title)}</div>
+            <div class="artifact-sub">${escapeHtml(artifact.artifact_type)} · rev ${artifact.revision} · ${escapeHtml(artifact.status)}</div>
+          `;
+          button.addEventListener("click", () => loadArtifact(artifact.id));
+          els.artifactList.appendChild(button);
+        }
+
+        if (!state.selectedArtifact) {
+          loadArtifact(state.artifacts[0].id);
+        }
+      }
+
+      async function loadArtifact(artifactId) {
+        const artifact = await requestJson(`/api/artifacts/${encodeURIComponent(artifactId)}`);
+        setSelectedArtifact(artifact);
+        renderArtifacts();
+      }
+
+      function setSelectedArtifact(artifact) {
+        state.selectedArtifact = artifact;
+
+        if (!artifact) {
+          els.artifactTitle.textContent = "未选择产物";
+          els.artifactMeta.textContent = "";
+          els.editor.value = "";
+          els.editor.disabled = true;
+          setEditorButtons(false);
+          return;
+        }
+
+        els.artifactTitle.textContent = artifact.title;
+        els.artifactMeta.textContent = `${artifact.artifact_type} · rev ${artifact.revision} · ${artifact.status}`;
+        els.editor.value = stringifyContent(artifact.content_json);
+        els.editor.disabled = false;
+        setEditorButtons(true);
+      }
+
+      function setEditorButtons(enabled) {
+        els.saveBtn.disabled = !enabled;
+        els.approveBtn.disabled = !enabled;
+        els.regenBtn.disabled = !enabled;
+      }
+
+      async function saveArtifact() {
+        if (!state.selectedArtifact) return;
+
+        let contentJson;
+        try {
+          contentJson = parseEditorValue(els.editor.value);
+        } catch (error) {
+          setToast("内容不是合法 JSON", "bad");
+          return;
+        }
+
+        try {
+          const updated = await requestJson(`/api/artifacts/${state.selectedArtifact.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              base_revision: state.selectedArtifact.revision,
+              content_json: contentJson,
+              title: contentJson.title || state.selectedArtifact.title,
+              edited_by: "web_workbench",
+            }),
+          });
+          setSelectedArtifact(updated);
+          await refreshArtifacts();
+          setToast("已保存", "ok");
+        } catch (error) {
+          setToast(error.message || "保存失败", "bad");
+        }
+      }
+
+      async function approveArtifact() {
+        if (!state.selectedArtifact) return;
+        const updated = await requestJson(`/api/artifacts/${state.selectedArtifact.id}/approve`, {
+          method: "POST",
+          body: JSON.stringify({ user_id: "web_workbench" }),
+        });
+        setSelectedArtifact(updated);
+        await refreshArtifacts();
+        setToast("已定稿", "ok");
+      }
+
+      async function requestRegenerate() {
+        if (!state.selectedArtifact) return;
+        const feedbackText = prompt("修改意见") || "";
+        const updated = await requestJson(`/api/artifacts/${state.selectedArtifact.id}/regenerate`, {
+          method: "POST",
+          body: JSON.stringify({
+            user_id: "web_workbench",
+            feedback_text: feedbackText,
+          }),
+        });
+        setSelectedArtifact(updated);
+        await refreshArtifacts();
+        setToast("已提交重新生成请求", "warn");
+      }
+
+      async function refreshArtifacts() {
+        if (!state.taskId) return;
+        const payload = await requestJson(`/api/tasks/${encodeURIComponent(state.taskId)}/artifacts`);
+        state.artifacts = payload.items || [];
+        renderArtifacts();
+      }
+
+      function openStream(taskId) {
+        if (!window.EventSource) {
+          els.syncState.textContent = "轮询模式";
+          return;
+        }
+
+        const source = new EventSource(`/api/tasks/${encodeURIComponent(taskId)}/artifacts/events`);
+        state.eventSource = source;
+        els.syncState.textContent = "连接中";
+
+        source.addEventListener("artifact.snapshot", (event) => {
+          const payload = JSON.parse(event.data);
+          state.artifacts = payload.items || [];
+          els.syncState.textContent = `已连接 · ${new Date().toLocaleTimeString()}`;
+
+          const current = state.selectedArtifact;
+          const latest = current
+            ? state.artifacts.find((item) => item.id === current.id)
+            : null;
+          renderArtifacts();
+
+          if (latest && latest.revision !== current.revision && !els.editor.matches(":focus")) {
+            loadArtifact(latest.id);
+          }
+        });
+
+        source.onerror = () => {
+          els.syncState.textContent = "重连中";
+        };
+      }
+
+      function closeStream() {
+        if (state.eventSource) {
+          state.eventSource.close();
+          state.eventSource = null;
+        }
+      }
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+          },
+          ...options,
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          const detail = data.detail ? `：${JSON.stringify(data.detail)}` : "";
+          throw new Error(`${data.message || "请求失败"}${detail}`);
+        }
+        return data;
+      }
+
+      function stringifyContent(value) {
+        return JSON.stringify(value || {}, null, 2);
+      }
+
+      function parseEditorValue(value) {
+        return JSON.parse(value || "{}");
+      }
+
+      function setToast(text, kind = "") {
+        els.toast.textContent = text;
+        els.toast.className = `toast ${kind}`.trim();
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+    </script>
+  </body>
+</html>
