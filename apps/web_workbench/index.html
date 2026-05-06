@@ -159,6 +159,17 @@
         width: fit-content;
       }
 
+      .delivery-links {
+        display: grid;
+        gap: 4px;
+        margin-top: 6px;
+        overflow-wrap: anywhere;
+      }
+
+      .delivery-links a {
+        color: var(--brand);
+      }
+
       .artifact-list {
         display: grid;
         gap: 8px;
@@ -221,6 +232,305 @@
         background: #fbfcfe;
       }
 
+      .structured-editor {
+        overflow: auto;
+        padding: 14px;
+        background: #fbfcfe;
+      }
+
+      .structured-editor textarea {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        min-height: 92px;
+        background: #fff;
+        font-family: inherit;
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .item-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 12px;
+        margin-top: 12px;
+      }
+
+      .item-card h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+      }
+
+      .preview {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        padding: 12px;
+        line-height: 1.7;
+      }
+
+      .preview h1,
+      .preview h2,
+      .preview h3 {
+        margin: 12px 0 8px;
+      }
+
+      .preview ul {
+        padding-left: 22px;
+      }
+
+      .deck-workspace {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.95fr) minmax(460px, 1.3fr);
+        gap: 14px;
+        align-items: start;
+      }
+
+      .deck-edit-pane,
+      .deck-preview-pane {
+        min-width: 0;
+      }
+
+      .deck-preview-pane {
+        position: sticky;
+        top: 86px;
+      }
+
+      .slide-stage {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .slide-thumbs {
+        display: grid;
+        gap: 8px;
+        max-height: calc(100vh - 230px);
+        overflow: auto;
+      }
+
+      .slide-thumb {
+        width: 96px;
+        aspect-ratio: 16 / 9;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        padding: 6px;
+        text-align: left;
+        overflow: hidden;
+      }
+
+      .slide-thumb.active {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px rgba(23, 105, 224, 0.12);
+      }
+
+      .slide-thumb-number {
+        color: var(--brand);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .slide-thumb-title {
+        margin-top: 3px;
+        color: #111827;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.25;
+      }
+
+      .slide-canvas-wrap {
+        min-width: 0;
+      }
+
+      .slide-canvas {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: 1px solid #cfd7e6;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.12);
+      }
+
+      .slide-canvas.cover {
+        background: #eff6ff;
+      }
+
+      .slide-canvas.problem,
+      .slide-canvas.architecture {
+        background: #f8fafc;
+      }
+
+      .slide-accent {
+        position: absolute;
+        inset: 0 auto 0 64%;
+        width: 36%;
+        background: #dbeafe;
+      }
+
+      .slide-title {
+        position: absolute;
+        left: 6.6%;
+        top: 7%;
+        width: 74%;
+        color: #111827;
+        font-size: clamp(18px, 2.7vw, 32px);
+        font-weight: 800;
+        line-height: 1.12;
+      }
+
+      .cover .slide-title {
+        top: 21%;
+        width: 54%;
+        font-size: clamp(24px, 4vw, 44px);
+      }
+
+      .slide-subtitle {
+        position: absolute;
+        left: 7%;
+        top: 48%;
+        width: 48%;
+        color: #4b5563;
+        font-size: clamp(12px, 1.55vw, 18px);
+        line-height: 1.45;
+      }
+
+      .slide-bullets {
+        position: absolute;
+        left: 6.6%;
+        top: 25%;
+        width: 86%;
+        display: grid;
+        gap: 10px;
+      }
+
+      .slide-canvas.has-visual .slide-bullets {
+        width: 54%;
+      }
+
+      .cover .slide-bullets {
+        top: 66%;
+        width: 50%;
+        gap: 5px;
+      }
+
+      .slide-bullet {
+        display: grid;
+        grid-template-columns: 6px 1fr;
+        gap: 12px;
+        align-items: stretch;
+        min-height: 40px;
+        padding: 10px 12px 10px 0;
+        background: rgba(255, 255, 255, 0.92);
+        color: #374151;
+        line-height: 1.38;
+        font-size: clamp(12px, 1.35vw, 16px);
+      }
+
+      .cover .slide-bullet {
+        min-height: 0;
+        padding: 0;
+        background: transparent;
+        grid-template-columns: 0 1fr;
+        color: #374151;
+      }
+
+      .slide-marker {
+        border-radius: 999px;
+        background: #2563eb;
+      }
+
+      .slide-bullet:nth-child(2) .slide-marker {
+        background: #0ea5e9;
+      }
+
+      .slide-bullet:nth-child(3) .slide-marker {
+        background: #10b981;
+      }
+
+      .slide-bullet:nth-child(4) .slide-marker {
+        background: #f59e0b;
+      }
+
+      .slide-bullet:nth-child(5) .slide-marker {
+        background: #ef4444;
+      }
+
+      .cover .slide-marker {
+        display: none;
+      }
+
+      .slide-visual {
+        position: absolute;
+        right: 6.6%;
+        top: 26%;
+        width: 30%;
+        height: 50%;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #1e40af;
+        text-align: center;
+        line-height: 1.5;
+      }
+
+      .cover .slide-visual {
+        inset: 0 0 0 auto;
+        width: 36%;
+        height: 100%;
+        border-radius: 0;
+        background: #dbeafe;
+      }
+
+      .slide-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+      }
+
+      .slide-footer-line {
+        position: absolute;
+        left: 6.6%;
+        right: 6.6%;
+        bottom: 7%;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: #94a3b8;
+        font-size: 11px;
+      }
+
+      .speaker-notes {
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: #fff;
+        color: #475467;
+        line-height: 1.6;
+      }
+
+      .speaker-notes strong {
+        color: #172033;
+      }
+
       .footer {
         display: flex;
         gap: 8px;
@@ -269,6 +579,24 @@
         textarea {
           min-height: 420px;
         }
+
+        .deck-workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .deck-preview-pane {
+          position: static;
+        }
+
+        .slide-stage {
+          grid-template-columns: 1fr;
+        }
+
+        .slide-thumbs {
+          display: flex;
+          max-height: none;
+          overflow-x: auto;
+        }
       }
     </style>
   </head>
@@ -313,7 +641,8 @@
               <button id="saveBtn" class="primary" type="button" disabled>保存</button>
             </div>
           </div>
-          <textarea id="editor" spellcheck="false" disabled></textarea>
+          <div id="structuredEditor" class="structured-editor"></div>
+          <textarea id="editor" spellcheck="false" disabled style="display:none"></textarea>
           <div class="footer">
             <div id="toast" class="toast">就绪</div>
             <div id="syncState" class="hint">未连接</div>
@@ -326,8 +655,10 @@
       const state = {
         taskId: new URLSearchParams(location.search).get("task_id") || "",
         task: null,
+        deliveryResult: {},
         artifacts: [],
         selectedArtifact: null,
+        selectedSlideIndex: 0,
         eventSource: null,
       };
 
@@ -339,6 +670,7 @@
         artifactList: document.getElementById("artifactList"),
         artifactTitle: document.getElementById("artifactTitle"),
         artifactMeta: document.getElementById("artifactMeta"),
+        structuredEditor: document.getElementById("structuredEditor"),
         editor: document.getElementById("editor"),
         saveBtn: document.getElementById("saveBtn"),
         approveBtn: document.getElementById("approveBtn"),
@@ -376,6 +708,7 @@
 
         const detail = await requestJson(`/api/tasks/${encodeURIComponent(taskId)}/execution`);
         state.task = detail.task;
+        state.deliveryResult = detail.delivery_result || {};
         state.artifacts = detail.artifacts || [];
 
         renderTask();
@@ -390,13 +723,31 @@
           return;
         }
 
+        const deliveryLinks = renderDeliveryLinks(state.deliveryResult);
         els.taskInfo.innerHTML = `
           <div class="task-title">${escapeHtml(state.task.title || state.task.id)}</div>
           <div><span class="status">${escapeHtml(state.task.status)}</span></div>
           <div>进度：${Number(state.task.progress || 0)}%</div>
           <div>步骤：${escapeHtml(state.task.current_step || "-")}</div>
           <div>类型：${escapeHtml(state.task.task_type || "-")}</div>
+          ${deliveryLinks}
         `;
+      }
+
+      function renderDeliveryLinks(result) {
+        if (!result) return "";
+        const links = [];
+        if (result.doc_url) links.push(linkLine("云文档", result.doc_url));
+        if (result.slide_url) links.push(linkLine("演示稿", result.slide_url));
+        return links.length ? `<div class="delivery-links">${links.join("")}</div>` : "";
+      }
+
+      function linkLine(label, url) {
+        const safeUrl = String(url || "");
+        if (safeUrl.startsWith("http://") || safeUrl.startsWith("https://")) {
+          return `<div>${escapeHtml(label)}：<a href="${escapeAttr(safeUrl)}" target="_blank" rel="noreferrer">${escapeHtml(safeUrl)}</a></div>`;
+        }
+        return `<div>${escapeHtml(label)}：${escapeHtml(safeUrl)}</div>`;
       }
 
       function renderArtifacts() {
@@ -440,6 +791,7 @@
         if (!artifact) {
           els.artifactTitle.textContent = "未选择产物";
           els.artifactMeta.textContent = "";
+          els.structuredEditor.innerHTML = "";
           els.editor.value = "";
           els.editor.disabled = true;
           setEditorButtons(false);
@@ -450,6 +802,7 @@
         els.artifactMeta.textContent = `${artifact.artifact_type} · rev ${artifact.revision} · ${artifact.status}`;
         els.editor.value = stringifyContent(artifact.content_json);
         els.editor.disabled = false;
+        renderStructuredEditor(artifact);
         setEditorButtons(true);
       }
 
@@ -464,9 +817,9 @@
 
         let contentJson;
         try {
-          contentJson = parseEditorValue(els.editor.value);
+          contentJson = collectEditorContent();
         } catch (error) {
-          setToast("内容不是合法 JSON", "bad");
+          setToast(error.message || "内容格式错误", "bad");
           return;
         }
 
@@ -544,7 +897,12 @@
             : null;
           renderArtifacts();
 
-          if (latest && latest.revision !== current.revision && !els.editor.matches(":focus")) {
+          if (
+            latest &&
+            latest.revision !== current.revision &&
+            !els.editor.matches(":focus") &&
+            !els.structuredEditor.contains(document.activeElement)
+          ) {
             loadArtifact(latest.id);
           }
         });
@@ -582,8 +940,330 @@
         return JSON.stringify(value || {}, null, 2);
       }
 
-      function parseEditorValue(value) {
-        return JSON.parse(value || "{}");
+      function collectEditorContent() {
+        const artifact = state.selectedArtifact;
+        if (!artifact) return {};
+
+        if (artifact.artifact_type === "doc_outline") {
+          return {
+            ...artifact.content_json,
+            title: valueOf("doc_title"),
+            sections: Array.from(els.structuredEditor.querySelectorAll(".section-card")).map((card, index) => ({
+              id: valueIn(card, "id") || `section_${index + 1}`,
+              title: valueIn(card, "title"),
+              purpose: valueIn(card, "purpose"),
+              format: valueIn(card, "format") || "paragraph",
+              key_points: lines(valueIn(card, "key_points")),
+            })),
+          };
+        }
+
+        if (artifact.artifact_type === "slide_outline") {
+          return {
+            ...artifact.content_json,
+            title: valueOf("slide_title"),
+            audience: valueOf("audience"),
+            presentation_goal: valueOf("presentation_goal"),
+            tone: valueOf("tone"),
+            slides: Array.from(els.structuredEditor.querySelectorAll(".slide-card")).map((card, index) => ({
+              id: valueIn(card, "id") || `slide_${index + 1}`,
+              page: Number(valueIn(card, "page") || index + 1),
+              title: valueIn(card, "title"),
+              purpose: valueIn(card, "purpose"),
+              slide_type: valueIn(card, "slide_type") || "generic",
+              key_message: valueIn(card, "key_message"),
+              content_sources: lines(valueIn(card, "content_sources")),
+              visual_need: valueIn(card, "visual_need") || "none",
+            })),
+          };
+        }
+
+        if (artifact.artifact_type === "slide_deck") {
+          return {
+            ...artifact.content_json,
+            title: valueOf("deck_title"),
+            slides: Array.from(els.structuredEditor.querySelectorAll(".deck-card")).map((card, index) => ({
+              ...((artifact.content_json.slides || [])[index] || {}),
+              id: valueIn(card, "id") || `slide_${index + 1}`,
+              page: Number(valueIn(card, "page") || index + 1),
+              type: valueIn(card, "type") || valueIn(card, "slide_type") || "generic",
+              title: valueIn(card, "title"),
+              subtitle: valueIn(card, "subtitle"),
+              bullets: lines(valueIn(card, "bullets")),
+              speaker_notes: valueIn(card, "speaker_notes"),
+              visual_suggestion: {
+                ...(((artifact.content_json.slides || [])[index] || {}).visual_suggestion || {}),
+                type: valueIn(card, "visual_type") || "none",
+                description: valueIn(card, "visual_description"),
+                candidate_image_urls: lines(valueIn(card, "candidate_image_urls")),
+              },
+            })),
+          };
+        }
+
+        if (artifact.artifact_type === "doc_draft") {
+          return {
+            ...artifact.content_json,
+            title: valueOf("draft_title"),
+            format: "markdown",
+            markdown: valueOf("markdown"),
+          };
+        }
+
+        return JSON.parse(els.editor.value || "{}");
+      }
+
+      function renderStructuredEditor(artifact) {
+        const content = artifact.content_json || {};
+        els.editor.style.display = "none";
+
+        if (artifact.artifact_type === "doc_outline") {
+          els.structuredEditor.innerHTML = `
+            ${field("doc_title", "文档标题", content.title || artifact.title)}
+            ${(content.sections || []).map((section, index) => `
+              <div class="item-card section-card">
+                <h3>章节 ${index + 1}</h3>
+                ${field("id", "ID", section.id || `section_${index + 1}`)}
+                ${field("title", "章节标题", section.title || "")}
+                ${area("purpose", "章节目的", section.purpose || "")}
+                ${field("format", "格式", section.format || "paragraph")}
+                ${area("key_points", "要点（每行一条）", (section.key_points || []).join("\n"))}
+              </div>
+            `).join("")}
+          `;
+          return;
+        }
+
+        if (artifact.artifact_type === "slide_outline") {
+          els.structuredEditor.innerHTML = `
+            ${field("slide_title", "PPT 标题", content.title || artifact.title)}
+            ${field("audience", "受众", content.audience || "")}
+            ${area("presentation_goal", "演示目标", content.presentation_goal || "")}
+            ${field("tone", "语气", content.tone || "")}
+            ${(content.slides || []).map((slide, index) => `
+              <div class="item-card slide-card">
+                <h3>第 ${slide.page || index + 1} 页：${escapeHtml(slide.title || "")}</h3>
+                ${field("id", "ID", slide.id || `slide_${index + 1}`)}
+                ${field("page", "页码", slide.page || index + 1)}
+                ${field("title", "标题", slide.title || "")}
+                ${area("purpose", "页面目的", slide.purpose || "")}
+                ${field("slide_type", "页面类型", slide.slide_type || "generic")}
+                ${area("key_message", "核心信息", slide.key_message || "")}
+                ${area("content_sources", "内容来源（每行一条）", (slide.content_sources || []).join("\n"))}
+                ${field("visual_need", "视觉建议", slide.visual_need || "none")}
+              </div>
+            `).join("")}
+          `;
+          return;
+        }
+
+        if (artifact.artifact_type === "slide_deck") {
+          state.selectedSlideIndex = Math.min(state.selectedSlideIndex, Math.max((content.slides || []).length - 1, 0));
+          renderSlideDeckEditor(content, artifact);
+          return;
+        }
+
+        if (artifact.artifact_type === "doc_draft") {
+          const markdown = content.markdown || "";
+          els.structuredEditor.innerHTML = `
+            ${field("draft_title", "文档标题", content.title || artifact.title)}
+            ${area("markdown", "Markdown 正文", markdown, 18)}
+            <div class="item-card">
+              <h3>预览</h3>
+              <div class="preview">${renderMarkdown(markdown)}</div>
+            </div>
+          `;
+          const markdownInput = els.structuredEditor.querySelector('[data-name="markdown"]');
+          markdownInput.addEventListener("input", () => {
+            els.structuredEditor.querySelector(".preview").innerHTML = renderMarkdown(markdownInput.value);
+          });
+          return;
+        }
+
+        els.structuredEditor.innerHTML = "";
+        els.editor.style.display = "block";
+      }
+
+      function renderSlideDeckEditor(content, artifact) {
+        const slides = content.slides || [];
+        els.structuredEditor.innerHTML = `
+          <div class="deck-workspace">
+            <div class="deck-edit-pane">
+              ${field("deck_title", "PPT 标题", content.title || artifact.title)}
+              ${slides.map((slide, index) => {
+                const visual = slide.visual_suggestion || {};
+                return `
+                  <div class="item-card deck-card" data-slide-index="${index}">
+                    <h3>第 ${slide.page || index + 1} 页：${escapeHtml(slide.title || "")}</h3>
+                    ${field("id", "ID", slide.id || `slide_${index + 1}`)}
+                    ${field("page", "页码", slide.page || index + 1)}
+                    ${field("type", "页面类型", slide.type || slide.slide_type || "generic")}
+                    ${field("title", "标题", slide.title || "")}
+                    ${field("subtitle", "副标题", slide.subtitle || "")}
+                    ${area("bullets", "要点（每行一条）", normalizeList(slide.bullets).join("\n"))}
+                    ${field("visual_type", "视觉类型", visual.type || "none")}
+                    ${area("visual_description", "视觉说明", visual.description || "", 3)}
+                    ${area("candidate_image_urls", "图片 URL（每行一条）", normalizeList(visual.candidate_image_urls).join("\n"), 3)}
+                    ${area("speaker_notes", "演讲备注", slide.speaker_notes || "")}
+                  </div>
+                `;
+              }).join("")}
+            </div>
+            <div class="deck-preview-pane">
+              <div class="slide-stage">
+                <div class="slide-thumbs"></div>
+                <div class="slide-canvas-wrap">
+                  <div class="slide-canvas"></div>
+                  <div class="speaker-notes"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        els.structuredEditor.querySelectorAll(".deck-card input, .deck-card textarea, [data-name='deck_title']").forEach((node) => {
+          node.addEventListener("input", () => renderSlidePreviewFromEditor());
+          node.addEventListener("focus", () => {
+            const card = node.closest(".deck-card");
+            if (!card) return;
+            state.selectedSlideIndex = Number(card.dataset.slideIndex || 0);
+            renderSlidePreviewFromEditor();
+          });
+        });
+
+        renderSlidePreviewFromEditor();
+      }
+
+      function renderSlidePreviewFromEditor() {
+        const deck = collectEditorContent();
+        const slides = deck.slides || [];
+        if (!slides.length) {
+          const canvas = els.structuredEditor.querySelector(".slide-canvas");
+          if (canvas) canvas.innerHTML = '<div class="slide-title">暂无幻灯片内容</div>';
+          return;
+        }
+
+        state.selectedSlideIndex = Math.min(Math.max(state.selectedSlideIndex, 0), slides.length - 1);
+        renderSlideThumbs(slides);
+        renderSlideCanvas(slides[state.selectedSlideIndex], deck.title, state.selectedSlideIndex, slides.length);
+      }
+
+      function renderSlideThumbs(slides) {
+        const root = els.structuredEditor.querySelector(".slide-thumbs");
+        if (!root) return;
+        root.innerHTML = slides.map((slide, index) => `
+          <button type="button" class="slide-thumb ${index === state.selectedSlideIndex ? "active" : ""}" data-preview-index="${index}">
+            <div class="slide-thumb-number">${index + 1}</div>
+            <div class="slide-thumb-title">${escapeHtml(slide.title || `第 ${index + 1} 页`)}</div>
+          </button>
+        `).join("");
+
+        root.querySelectorAll(".slide-thumb").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.selectedSlideIndex = Number(button.dataset.previewIndex || 0);
+            renderSlidePreviewFromEditor();
+            const card = els.structuredEditor.querySelector(`.deck-card[data-slide-index="${state.selectedSlideIndex}"]`);
+            if (card) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          });
+        });
+      }
+
+      function renderSlideCanvas(slide, deckTitle, index, total) {
+        const canvas = els.structuredEditor.querySelector(".slide-canvas");
+        const notes = els.structuredEditor.querySelector(".speaker-notes");
+        if (!canvas || !notes) return;
+
+        const slideType = slide.type || slide.slide_type || "generic";
+        const visual = slide.visual_suggestion || {};
+        const imageUrl = firstImageUrl(visual);
+        const visualText = visual.description || "";
+        const hasVisual = imageUrl || visualText || slideType === "cover";
+        const bullets = normalizeList(slide.bullets).slice(0, slideType === "cover" ? 3 : 6);
+
+        canvas.className = `slide-canvas ${classToken(slideType)} ${hasVisual ? "has-visual" : ""}`;
+        canvas.innerHTML = `
+          ${slideType === "cover" ? '<div class="slide-accent"></div>' : ""}
+          <div class="slide-title">${escapeHtml(slide.title || deckTitle || "未命名演示稿")}</div>
+          ${slide.subtitle ? `<div class="slide-subtitle">${escapeHtml(slide.subtitle)}</div>` : ""}
+          <div class="slide-bullets">
+            ${bullets.map((bullet) => `
+              <div class="slide-bullet">
+                <span class="slide-marker"></span>
+                <span>${escapeHtml(bullet)}</span>
+              </div>
+            `).join("")}
+          </div>
+          ${hasVisual ? `
+            <div class="slide-visual">
+              ${imageUrl ? `<img src="${escapeAttr(imageUrl)}" alt="" />` : `<div>${escapeHtml(visualText || visual.type || "视觉区域")}</div>`}
+            </div>
+          ` : ""}
+          <div class="slide-footer-line">
+            <span>${escapeHtml(deckTitle || "")}</span>
+            <span>${index + 1} / ${total}</span>
+          </div>
+        `;
+
+        notes.innerHTML = `
+          <strong>演讲备注</strong>
+          <div>${escapeHtml(slide.speaker_notes || "暂无备注")}</div>
+        `;
+      }
+
+      function field(name, label, value) {
+        return `<div class="field"><label>${escapeHtml(label)}</label><input data-name="${name}" value="${escapeHtml(value)}" /></div>`;
+      }
+
+      function area(name, label, value, rows = 4) {
+        return `<div class="field"><label>${escapeHtml(label)}</label><textarea data-name="${name}" rows="${rows}">${escapeHtml(value)}</textarea></div>`;
+      }
+
+      function valueOf(name) {
+        return valueIn(els.structuredEditor, name);
+      }
+
+      function valueIn(root, name) {
+        const node = root.querySelector(`[data-name="${name}"]`);
+        return node ? node.value.trim() : "";
+      }
+
+      function lines(value) {
+        return String(value || "").replaceAll("\\n", "\n").split("\n").map((item) => item.trim()).filter(Boolean);
+      }
+
+      function normalizeList(value) {
+        if (Array.isArray(value)) {
+          return value
+            .flatMap((item) => String(item || "").replaceAll("\\n", "\n").split("\n"))
+            .map((item) => item.trim())
+            .filter(Boolean);
+        }
+        return lines(String(value || "").replaceAll("\\n", "\n"));
+      }
+
+      function firstLine(value) {
+        return String(value || "").replaceAll("\\n", "\n").split("\n").map((item) => item.trim()).find(Boolean) || "";
+      }
+
+      function firstImageUrl(visual) {
+        if (!visual || typeof visual !== "object") return "";
+        const urls = normalizeList(visual.candidate_image_urls || []);
+        return urls[0] || firstLine(visual.image_url || "");
+      }
+
+      function renderMarkdown(markdown) {
+        return escapeHtml(markdown || "")
+          .replaceAll("\\n", "\n")
+          .split("\n")
+          .map((line) => {
+            if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
+            if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
+            if (line.startsWith("### ")) return `<h3>${line.slice(4)}</h3>`;
+            if (line.startsWith("- ")) return `<ul><li>${line.slice(2)}</li></ul>`;
+            return line ? `<p>${line}</p>` : "";
+          })
+          .join("")
+          .replaceAll("</ul><ul>", "");
       }
 
       function setToast(text, kind = "") {
@@ -598,6 +1278,14 @@
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;")
           .replaceAll("'", "&#039;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value).replaceAll("`", "&#096;");
+      }
+
+      function classToken(value) {
+        return String(value || "generic").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
       }
     </script>
   </body>

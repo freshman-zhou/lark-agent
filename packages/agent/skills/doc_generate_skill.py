@@ -7,7 +7,7 @@ from packages.shared.exceptions import AppException
 
 class DocGenerateSkill(BaseSkill):
     name = "doc.generate"
-    description = "根据 discussion_summary 生成方案文档 Markdown，并创建飞书云文档。"
+    description = "根据 discussion_summary 生成方案文档 Markdown 草稿。"
 
     def __init__(self):
         self.document_api = FeishuDocumentCliApi()
@@ -17,7 +17,7 @@ class DocGenerateSkill(BaseSkill):
         summary = context.memory.get("discussion_summary", {})
         doc_outline = context.memory.get("doc_outline") or {}
         research_context = context.memory.get("research_context") or {}
-        create_document = params.get("create_document", True)
+        create_document = params.get("create_document", False)
         doc_markdown = await self._build_doc_markdown(
             task_title=context.task.title,
             summary=summary,
@@ -31,7 +31,7 @@ class DocGenerateSkill(BaseSkill):
         if not create_document:
             return SkillResult(
                 success=True,
-                message="已重新生成方案文档草稿",
+                message="已生成方案文档草稿",
                 data={
                     "doc_markdown": doc_markdown,
                     "doc_outline": doc_outline,

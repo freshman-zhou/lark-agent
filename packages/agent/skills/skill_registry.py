@@ -1,9 +1,11 @@
 from packages.agent.skills.base_skill import BaseSkill, SkillResult
 from packages.agent.skills.delivery_skill import DeliverySkill
 from packages.agent.skills.discussion_summary_skill import DiscussionSummarySkill
+from packages.agent.skills.doc_draft_confirm_skill import DocDraftConfirmSkill
 from packages.agent.skills.doc_generate_skill import DocGenerateSkill
 from packages.agent.skills.doc_outline_auto_confirm_skill import DocOutlineAutoConfirmSkill
 from packages.agent.skills.doc_outline_plan_skill import DocOutlinePlanSkill
+from packages.agent.skills.doc_publish_skill import DocPublishSkill
 from packages.agent.skills.doc_research_plan_skill import DocResearchPlanSkill
 from packages.agent.skills.feishu_collect_context_skill import FeishuCollectContextSkill
 from packages.agent.skills.image_search_collect_skill import ImageSearchCollectSkill
@@ -29,6 +31,8 @@ class SkillRegistry:
         self.register(DocResearchPlanSkill())
         self.register(ResearchCollectSkill())
         self.register(DocGenerateSkill())
+        self.register(DocDraftConfirmSkill())
+        self.register(DocPublishSkill())
         self.register(SlideOutlinePlanSkill())
         self.register(SlideOutlineAutoConfirmSkill())
         self.register(SlideResearchPlanSkill())

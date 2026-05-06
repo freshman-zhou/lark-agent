@@ -26,7 +26,7 @@ def build_task_graph(
         collect_context -> summarize
         -> doc.plan_outline -> doc.confirm_outline(auto)
         -> doc.plan_research -> research.collect
-        -> doc.generate -> delivery
+        -> doc.generate -> doc.confirm_draft -> doc.publish_document -> delivery
     - GENERATE_SLIDES:
         collect_context -> summarize
         -> slide.plan_outline -> slide.confirm_outline(auto)
@@ -152,6 +152,20 @@ def build_task_graph(
             state,
             skill_name="doc.generate",
             progress_after_success=70,
+        )
+
+    async def confirm_doc_draft_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="doc.confirm_draft",
+            progress_after_success=71,
+        )
+
+    async def publish_doc_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="doc.publish_document",
+            progress_after_success=72,
         )
 
     async def plan_slide_outline_node(state: TaskGraphState) -> TaskGraphState:
@@ -324,6 +338,8 @@ def build_task_graph(
     graph.add_node("plan_doc_research", plan_doc_research_node)
     graph.add_node("collect_research", collect_research_node)
     graph.add_node("generate_doc", generate_doc_node)
+    graph.add_node("confirm_doc_draft", confirm_doc_draft_node)
+    graph.add_node("publish_doc", publish_doc_node)
     graph.add_node("plan_slide_outline", plan_slide_outline_node)
     graph.add_node("confirm_slide_outline", confirm_slide_outline_node)
     graph.add_node("plan_slide_research", plan_slide_research_node)
@@ -407,6 +423,24 @@ def build_task_graph(
 
     graph.add_conditional_edges(
         "generate_doc",
+        route_error_or("confirm_doc_draft"),
+        {
+            "confirm_doc_draft": "confirm_doc_draft",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "confirm_doc_draft",
+        route_error_or("publish_doc"),
+        {
+            "publish_doc": "publish_doc",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "publish_doc",
         route_after_doc,
         {
             "plan_slide_outline": "plan_slide_outline",

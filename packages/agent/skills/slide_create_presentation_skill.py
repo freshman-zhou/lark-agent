@@ -1,4 +1,6 @@
 from packages.agent.skills.base_skill import BaseSkill, SkillResult
+from packages.domain.artifact import ArtifactStatus
+from packages.infrastructure.db.repositories.artifact_repository import ArtifactRepository
 from packages.integrations.feishu.slides.slides_cli_api import FeishuSlidesCliApi
 from packages.shared.exceptions import AppException
 
@@ -11,7 +13,7 @@ class SlideCreatePresentationSkill(BaseSkill):
         self.slides_api = FeishuSlidesCliApi()
 
     async def run(self, params: dict, context) -> SkillResult:
-        slide_json = context.memory.get("slide_json") or {}
+        slide_json = self._get_approved_slide_json(context)
         if not slide_json:
             return SkillResult(success=False, error="slide_json is empty")
 
@@ -38,3 +40,17 @@ class SlideCreatePresentationSkill(BaseSkill):
                 "slides_create_result": presentation.raw or {},
             },
         )
+
+    @staticmethod
+    def _get_approved_slide_json(context) -> dict:
+        try:
+            artifact = ArtifactRepository(context.db).get_by_task_and_type(
+                context.task.id,
+                "slide_deck",
+            )
+            if artifact.status == ArtifactStatus.APPROVED.value:
+                return artifact.content_json or {}
+        except Exception:
+            pass
+
+        return context.memory.get("slide_json") or {}

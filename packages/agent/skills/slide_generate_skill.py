@@ -98,13 +98,34 @@ class SlideGenerateSkill(BaseSkill):
                     "type": str(slide.get("type") or slide.get("slide_type") or "generic"),
                     "title": str(slide.get("title") or f"第 {index} 页"),
                     "subtitle": str(slide.get("subtitle") or ""),
-                    "bullets": slide.get("bullets") or [],
+                    "bullets": SlideGenerateSkill._normalize_bullets(slide.get("bullets"))[:5],
                     "speaker_notes": str(slide.get("speaker_notes") or ""),
                     "visual_suggestion": slide.get("visual_suggestion") or {},
                     "sources": slide.get("sources") or [],
                 }
             )
         return {"title": str(deck.get("title") or title or "汇报演示稿"), "source": "agent_pilot", "slides": normalized}
+
+    @staticmethod
+    def _normalize_bullets(value) -> list[str]:
+        if not value:
+            return []
+
+        if isinstance(value, str):
+            candidates = value.replace("\\n", "\n").split("\n")
+        elif isinstance(value, list):
+            candidates = []
+            for item in value:
+                candidates.extend(str(item or "").replace("\\n", "\n").split("\n"))
+        else:
+            candidates = [str(value)]
+
+        bullets = []
+        for item in candidates:
+            text = str(item or "").strip(" \t\r\n-•、")
+            if text:
+                bullets.append(text)
+        return bullets
 
     def _bullets_for_slide(
         self,
