@@ -502,6 +502,8 @@
       async function requestRegenerate() {
         if (!state.selectedArtifact) return;
         const feedbackText = prompt("修改意见") || "";
+        setToast("正在重新生成", "warn");
+        setEditorButtons(false);
         const updated = await requestJson(`/api/artifacts/${state.selectedArtifact.id}/regenerate`, {
           method: "POST",
           body: JSON.stringify({
@@ -511,7 +513,7 @@
         });
         setSelectedArtifact(updated);
         await refreshArtifacts();
-        setToast("已提交重新生成请求", "warn");
+        setToast("已重新生成", "ok");
       }
 
       async function refreshArtifacts() {

@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from packages.domain.artifact import ArtifactType
 from packages.infrastructure.db.models.artifact_model import ArtifactModel
 from packages.infrastructure.db.repositories.artifact_repository import ArtifactRepository
+from packages.infrastructure.db.repositories.task_job_repository import TaskJobRepository
 from packages.infrastructure.db.repositories.task_repository import TaskRepository
+from packages.domain.task.task_status import TaskStatus
 
 
 class ArtifactService:
@@ -28,6 +30,7 @@ class ArtifactService:
         self.db = db
         self.repository = ArtifactRepository(db)
         self.task_repository = TaskRepository(db)
+        self.task_job_repository = TaskJobRepository(db)
 
     def capture_skill_output(
         self,
@@ -108,9 +111,10 @@ class ArtifactService:
             reviewed_by=reviewed_by,
             feedback_text=feedback_text,
         )
+        self._resume_waiting_task_if_needed(artifact.task_id)
         return self.serialize(artifact, include_content=True)
 
-    def request_regenerate(
+    async def request_regenerate(
         self,
         *,
         artifact_id: str,
@@ -122,7 +126,13 @@ class ArtifactService:
             requested_by=requested_by,
             feedback_text=feedback_text,
         )
-        return self.serialize(artifact, include_content=True)
+
+        from packages.application.artifact_regeneration_service import (
+            ArtifactRegenerationService,
+        )
+
+        regenerated = await ArtifactRegenerationService(self.db).regenerate(artifact)
+        return self.serialize(regenerated, include_content=True)
 
     @classmethod
     def _normalize_content_json(
@@ -190,3 +200,23 @@ class ArtifactService:
     @staticmethod
     def _dt(value: datetime | None) -> str | None:
         return value.isoformat() if value else None
+
+    def _resume_waiting_task_if_needed(self, task_id: str) -> None:
+        try:
+            task = self.task_repository.get_by_id(task_id)
+            if task.status != TaskStatus.WAITING_USER_INPUT:
+                return
+
+            resumed_job = self.task_job_repository.resume_waiting_by_task(task_id)
+            if resumed_job is None:
+                return
+
+            self.task_repository.update_status(
+                task_id=task_id,
+                status=TaskStatus.QUEUED,
+                current_step="用户已定稿，等待继续执行",
+                progress=task.progress,
+            )
+        except Exception:
+            self.db.rollback()
+            raise

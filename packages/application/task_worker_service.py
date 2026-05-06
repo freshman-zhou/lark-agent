@@ -127,10 +127,18 @@ class TaskWorkerService:
             notify_service = TaskNotifyService()
 
             if task.source_chat_id:
-                await notify_service.send_progress_to_chat(
-                    chat_id=task.source_chat_id,
-                    task=task,
-                )
+                try:
+                    await notify_service.send_progress_to_chat(
+                        chat_id=task.source_chat_id,
+                        task=task,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Send progress notification failed, continue task execution: "
+                        "task_id=%s chat_id=%s",
+                        task.id,
+                        task.source_chat_id,
+                    )
 
             async def on_langgraph_progress(task_id: str) -> None:
                 await card_refresh_service.refresh_execution_card_by_task_id(
@@ -155,6 +163,20 @@ class TaskWorkerService:
                 task_id=job.task_id,
                 runtime_result=runtime_result,
             )
+
+            if (
+                refreshed_status == TaskStatus.WAITING_USER_INPUT
+                or runtime_result.get("status") == TaskStatus.WAITING_USER_INPUT.value
+            ):
+                job_repository.mark_waiting_user_input(
+                    job_id=job.id,
+                    message=runtime_result.get("message") or "等待用户确认",
+                )
+                await card_refresh_service.refresh_execution_card_by_task_id(
+                    task_id=job.task_id,
+                    force=True,
+                )
+                return True
 
             if refreshed_status == TaskStatus.COMPLETED:
                 job_repository.mark_success(job.id)

@@ -27,6 +27,7 @@ class SlideGenerateSkill(BaseSkill):
                     f"已确认 PPT 大纲：\n{slide_outline}\n\n"
                     f"PPT 补充资料：\n{slide_research_context}\n\n"
                     f"PPT 图片候选：\n{slide_image_context}\n\n"
+                    f"用户重新生成反馈：\n{context.memory.get('regeneration_feedback') or '无'}\n\n"
                     "请生成完整 slide_json。"
                 ),
             )

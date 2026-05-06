@@ -3,6 +3,7 @@
 from typing import Any
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from langgraph.types import Command
 from sqlalchemy.orm import Session
 
 from packages.agent.graph.checkpoint_config import (
@@ -81,7 +82,10 @@ class LangGraphTaskRunner:
                 )
 
             actions = self.action_repository.list_by_task(task_id)
-            status = result.get("status") or TaskStatus.COMPLETED.value
+            status = self._resolve_runtime_status(
+                task_id=task_id,
+                result=result,
+            )
 
             return {
                 "task_id": task_id,
@@ -89,8 +93,9 @@ class LangGraphTaskRunner:
                 "checkpoint_db_path": self.checkpoint_db_path,
                 "status": status,
                 "action_count": len(actions),
-                "message": result.get("message") or "LangGraph 执行完成",
+                "message": result.get("message") or self._default_message(status),
                 "error": result.get("error"),
+                "interrupts": self._serialize_interrupts(result),
             }
 
         except Exception as exc:
@@ -133,7 +138,7 @@ class LangGraphTaskRunner:
         graph,
         config: dict[str, Any],
         task_id: str,
-    ) -> dict[str, Any] | None:
+    ) -> Any:
         """
         判断是新执行还是从 checkpoint 恢复。
 
@@ -151,6 +156,13 @@ class LangGraphTaskRunner:
                     task_id,
                     next_nodes,
                 )
+                if self._snapshot_has_interrupt(snapshot):
+                    return Command(
+                        resume={
+                            "task_id": task_id,
+                            "source": "task_worker_resume",
+                        }
+                    )
                 return None
 
         except Exception as exc:
@@ -172,3 +184,42 @@ class LangGraphTaskRunner:
             return len(self.action_repository.list_by_task(task_id))
         except Exception:
             return 0
+
+    def _resolve_runtime_status(
+        self,
+        *,
+        task_id: str,
+        result: dict[str, Any],
+    ) -> str:
+        if result.get("__interrupt__"):
+            return TaskStatus.WAITING_USER_INPUT.value
+
+        try:
+            task = self.task_repository.get_by_id(task_id)
+            if task.status == TaskStatus.WAITING_USER_INPUT:
+                return TaskStatus.WAITING_USER_INPUT.value
+        except Exception:
+            pass
+
+        return result.get("status") or TaskStatus.COMPLETED.value
+
+    @staticmethod
+    def _default_message(status: str) -> str:
+        if status == TaskStatus.WAITING_USER_INPUT.value:
+            return "LangGraph 已中断，等待用户确认"
+
+        return "LangGraph 执行完成"
+
+    @staticmethod
+    def _serialize_interrupts(result: dict[str, Any]) -> list[str]:
+        interrupts = result.get("__interrupt__") or []
+        return [str(item) for item in interrupts]
+
+    @staticmethod
+    def _snapshot_has_interrupt(snapshot) -> bool:
+        tasks = getattr(snapshot, "tasks", ()) or ()
+        for task in tasks:
+            interrupts = getattr(task, "interrupts", ()) or ()
+            if interrupts:
+                return True
+        return False

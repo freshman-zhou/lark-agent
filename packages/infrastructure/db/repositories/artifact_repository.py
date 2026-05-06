@@ -158,3 +158,12 @@ class ArtifactRepository:
         self.db.commit()
         self.db.refresh(artifact)
         return artifact
+
+    def mark_regenerating(self, artifact_id: str) -> ArtifactModel:
+        artifact = self.get_by_id(artifact_id)
+        artifact.status = ArtifactStatus.REGENERATING.value
+        artifact.updated_at = datetime.utcnow()
+
+        self.db.commit()
+        self.db.refresh(artifact)
+        return artifact

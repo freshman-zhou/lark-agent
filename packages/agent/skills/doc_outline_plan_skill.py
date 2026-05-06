@@ -20,6 +20,7 @@ class DocOutlinePlanSkill(BaseSkill):
         user_prompt = (
             f"用户任务目标：\n{task_goal}\n\n"
             f"结构化讨论总结：\n{summary}\n\n"
+            f"用户重新生成反馈：\n{context.memory.get('regeneration_feedback') or '无'}\n\n"
             "请输出动态文档大纲 JSON。"
         )
 

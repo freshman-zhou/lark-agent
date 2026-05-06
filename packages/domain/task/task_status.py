@@ -55,6 +55,7 @@ class TaskJobType(str, Enum):
 class TaskJobStatus(str, Enum):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
+    WAITING_USER_INPUT = "WAITING_USER_INPUT"
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     RETRYING = "RETRYING"

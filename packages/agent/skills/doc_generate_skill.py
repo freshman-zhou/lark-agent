@@ -17,14 +17,27 @@ class DocGenerateSkill(BaseSkill):
         summary = context.memory.get("discussion_summary", {})
         doc_outline = context.memory.get("doc_outline") or {}
         research_context = context.memory.get("research_context") or {}
+        create_document = params.get("create_document", True)
         doc_markdown = await self._build_doc_markdown(
             task_title=context.task.title,
             summary=summary,
             doc_outline=doc_outline,
             research_context=research_context,
+            regeneration_feedback=context.memory.get("regeneration_feedback") or "",
         )
 
         context.memory["doc_markdown"] = doc_markdown
+
+        if not create_document:
+            return SkillResult(
+                success=True,
+                message="已重新生成方案文档草稿",
+                data={
+                    "doc_markdown": doc_markdown,
+                    "doc_outline": doc_outline,
+                    "research_context": research_context,
+                },
+            )
 
         try:
             document = await self.document_api.create_document(context.task.title)
@@ -80,6 +93,7 @@ class DocGenerateSkill(BaseSkill):
         summary: dict,
         doc_outline: dict,
         research_context: dict,
+        regeneration_feedback: str = "",
     ) -> str:
         if doc_outline.get("sections"):
             try:
@@ -89,6 +103,7 @@ class DocGenerateSkill(BaseSkill):
                     f"已确认文档大纲：\n{doc_outline}\n\n"
                     f"结构化讨论总结：\n{summary}\n\n"
                     f"补充资料上下文：\n{research_context}\n\n"
+                    f"用户重新生成反馈：\n{regeneration_feedback or '无'}\n\n"
                     "请生成完整 Markdown 正文。"
                 )
                 markdown = await self.llm_client.chat_text(

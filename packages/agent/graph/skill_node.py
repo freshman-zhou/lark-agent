@@ -4,6 +4,11 @@ from collections.abc import Awaitable, Callable
 from inspect import isawaitable
 from typing import Any
 
+try:
+    from langgraph.errors import GraphInterrupt
+except Exception:  # pragma: no cover - depends on langgraph version
+    GraphInterrupt = None
+
 from sqlalchemy.orm import Session
 
 from packages.agent.graph.task_state import TaskGraphState
@@ -165,6 +170,23 @@ class SkillNodeExecutor:
             return success_state
 
         except Exception as exc:
+            if GraphInterrupt is not None and isinstance(exc, GraphInterrupt):
+                if action is not None:
+                    try:
+                        self.action_repository.mark_success(
+                            action_id=action.id,
+                            output_json={
+                                "message": "等待用户在工作台确认产物",
+                                "data": {
+                                    "status": TaskStatus.WAITING_USER_INPUT.value,
+                                    "skill_name": skill_name,
+                                },
+                            },
+                        )
+                    except Exception:
+                        logger.exception("Failed to mark interrupted action waiting")
+                raise
+
             logger.exception(
                 "LangGraph skill node failed: task_id=%s skill=%s error=%s",
                 task_id,

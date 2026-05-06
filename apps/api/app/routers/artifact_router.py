@@ -80,13 +80,13 @@ def approve_artifact(
 
 
 @router.post("/artifacts/{artifact_id}/regenerate")
-def request_artifact_regenerate(
+async def request_artifact_regenerate(
     artifact_id: str,
     request: ReviewArtifactRequest | None = None,
     db: Session = Depends(get_db_session),
 ):
     service = ArtifactService(db)
-    return service.request_regenerate(
+    return await service.request_regenerate(
         artifact_id=artifact_id,
         requested_by=request.user_id if request else None,
         feedback_text=request.feedback_text if request else None,

@@ -25,6 +25,7 @@ class SlideOutlinePlanSkill(BaseSkill):
                     f"讨论总结：\n{summary}\n\n"
                     f"文档大纲：\n{doc_outline}\n\n"
                     f"文档内容摘录：\n{doc_markdown[:5000]}\n\n"
+                    f"用户重新生成反馈：\n{context.memory.get('regeneration_feedback') or '无'}\n\n"
                     "请生成 PPT 大纲 JSON。"
                 ),
             )

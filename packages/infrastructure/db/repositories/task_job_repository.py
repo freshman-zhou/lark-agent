@@ -123,6 +123,54 @@ class TaskJobRepository:
 
         return job
 
+    def mark_waiting_user_input(
+        self,
+        job_id: str,
+        message: str | None = None,
+    ) -> TaskJobModel:
+        job = self.get_by_id(job_id)
+
+        if job is None:
+            raise ValueError(f"Task job not found: {job_id}")
+
+        now = datetime.utcnow()
+
+        job.status = TaskJobStatus.WAITING_USER_INPUT.value
+        job.error_message = message
+        job.finished_at = None
+        job.updated_at = now
+
+        self.db.commit()
+        self.db.refresh(job)
+
+        return job
+
+    def resume_waiting_by_task(self, task_id: str) -> TaskJobModel | None:
+        stmt = (
+            select(TaskJobModel)
+            .where(TaskJobModel.task_id == task_id)
+            .where(TaskJobModel.status == TaskJobStatus.WAITING_USER_INPUT.value)
+            .order_by(TaskJobModel.updated_at.desc())
+            .limit(1)
+        )
+        job = self.db.scalar(stmt)
+
+        if job is None:
+            return None
+
+        now = datetime.utcnow()
+
+        job.status = TaskJobStatus.PENDING.value
+        job.error_message = None
+        job.started_at = None
+        job.finished_at = None
+        job.updated_at = now
+
+        self.db.commit()
+        self.db.refresh(job)
+
+        return job
+
     def mark_failed(self, job_id: str, error_message: str) -> TaskJobModel:
         job = self.get_by_id(job_id)
 
