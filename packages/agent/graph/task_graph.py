@@ -106,7 +106,35 @@ def build_task_graph(
         return await skill_executor.run_skill(
             state,
             skill_name="discussion.summarize",
-            progress_after_success=50,
+            progress_after_success=45,
+        )
+
+    async def plan_doc_outline_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="doc.plan_outline",
+            progress_after_success=55,
+        )
+
+    async def confirm_doc_outline_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="doc.confirm_outline",
+            progress_after_success=60,
+        )
+
+    async def plan_doc_research_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="doc.plan_research",
+            progress_after_success=63,
+        )
+
+    async def collect_research_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="research.collect",
+            progress_after_success=66,
         )
 
     async def generate_doc_node(state: TaskGraphState) -> TaskGraphState:
@@ -197,7 +225,7 @@ def build_task_graph(
         task_type = state.get("task_type")
 
         if task_type == "CREATE_DOC_FROM_IM":
-            return "generate_doc"
+            return "plan_doc_outline"
 
         if task_type == "GENERATE_SLIDES":
             return "generate_slide"
@@ -206,7 +234,7 @@ def build_task_graph(
             return "delivery"
 
         # 默认兼容 IM_TO_DOC_TO_PPT 或 UNKNOWN
-        return "generate_doc"
+        return "plan_doc_outline"
 
     def route_after_doc(state: TaskGraphState) -> str:
         if state.get("error"):
@@ -225,6 +253,10 @@ def build_task_graph(
     graph.add_node("load_task", load_task_node)
     graph.add_node("collect_context", collect_context_node)
     graph.add_node("summarize", summarize_node)
+    graph.add_node("plan_doc_outline", plan_doc_outline_node)
+    graph.add_node("confirm_doc_outline", confirm_doc_outline_node)
+    graph.add_node("plan_doc_research", plan_doc_research_node)
+    graph.add_node("collect_research", collect_research_node)
     graph.add_node("generate_doc", generate_doc_node)
     graph.add_node("generate_slide", generate_slide_node)
     graph.add_node("delivery", delivery_node)
@@ -256,9 +288,45 @@ def build_task_graph(
         "summarize",
         route_after_summarize,
         {
-            "generate_doc": "generate_doc",
+            "plan_doc_outline": "plan_doc_outline",
             "generate_slide": "generate_slide",
             "delivery": "delivery",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "plan_doc_outline",
+        route_error_or("confirm_doc_outline"),
+        {
+            "confirm_doc_outline": "confirm_doc_outline",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "confirm_doc_outline",
+        route_error_or("plan_doc_research"),
+        {
+            "plan_doc_research": "plan_doc_research",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "plan_doc_research",
+        route_error_or("collect_research"),
+        {
+            "collect_research": "collect_research",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "collect_research",
+        route_error_or("generate_doc"),
+        {
+            "generate_doc": "generate_doc",
             "fail": "fail",
         },
     )
