@@ -20,17 +20,27 @@ def build_task_graph(
         checkpointer: Any | None = None,
     ):
     """
-    第一版 LangGraph 任务执行图。
+    LangGraph 任务执行图。
 
-    先不做 LLM 自主规划，而是将原 AgentExecutor 的规则序列迁移为图：
     - CREATE_DOC_FROM_IM:
-        collect_context -> summarize -> generate_doc -> delivery
+        collect_context -> summarize
+        -> doc.plan_outline -> doc.confirm_outline(auto)
+        -> doc.plan_research -> research.collect
+        -> doc.generate -> delivery
     - GENERATE_SLIDES:
-        collect_context -> summarize -> generate_slide -> delivery
+        collect_context -> summarize
+        -> slide.plan_outline -> slide.confirm_outline(auto)
+        -> slide.plan_research -> research.collect_for_slide
+        -> slide.plan_images -> image_search.collect
+        -> slide.generate_deck -> slide.confirm_deck(auto)
+        -> slide.create_presentation -> delivery
     - SUMMARIZE_DISCUSSION:
         collect_context -> summarize -> delivery
     - 其他 / IM_TO_DOC_TO_PPT:
-        collect_context -> summarize -> generate_doc -> generate_slide -> delivery
+        collect_context -> summarize
+        -> doc workflow
+        -> slide workflow
+        -> delivery
     """
 
     task_repository = TaskRepository(db)
@@ -144,11 +154,67 @@ def build_task_graph(
             progress_after_success=70,
         )
 
-    async def generate_slide_node(state: TaskGraphState) -> TaskGraphState:
+    async def plan_slide_outline_node(state: TaskGraphState) -> TaskGraphState:
         return await skill_executor.run_skill(
             state,
-            skill_name="slide.generate",
+            skill_name="slide.plan_outline",
+            progress_after_success=73,
+        )
+
+    async def confirm_slide_outline_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.confirm_outline",
+            progress_after_success=75,
+        )
+
+    async def plan_slide_research_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.plan_research",
+            progress_after_success=77,
+        )
+
+    async def collect_slide_research_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="research.collect_for_slide",
+            progress_after_success=79,
+        )
+
+    async def plan_slide_images_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.plan_images",
+            progress_after_success=81,
+        )
+
+    async def collect_slide_images_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="image_search.collect",
+            progress_after_success=83,
+        )
+
+    async def generate_slide_deck_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.generate_deck",
             progress_after_success=85,
+        )
+
+    async def confirm_slide_deck_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.confirm_deck",
+            progress_after_success=88,
+        )
+
+    async def create_slide_presentation_node(state: TaskGraphState) -> TaskGraphState:
+        return await skill_executor.run_skill(
+            state,
+            skill_name="slide.create_presentation",
+            progress_after_success=90,
         )
 
     async def delivery_node(state: TaskGraphState) -> TaskGraphState:
@@ -228,7 +294,7 @@ def build_task_graph(
             return "plan_doc_outline"
 
         if task_type == "GENERATE_SLIDES":
-            return "generate_slide"
+            return "plan_slide_outline"
 
         if task_type == "SUMMARIZE_DISCUSSION":
             return "delivery"
@@ -246,7 +312,7 @@ def build_task_graph(
             return "delivery"
 
         # IM_TO_DOC_TO_PPT / UNKNOWN 默认继续生成 PPT
-        return "generate_slide"
+        return "plan_slide_outline"
 
     graph = StateGraph(TaskGraphState)
 
@@ -258,7 +324,15 @@ def build_task_graph(
     graph.add_node("plan_doc_research", plan_doc_research_node)
     graph.add_node("collect_research", collect_research_node)
     graph.add_node("generate_doc", generate_doc_node)
-    graph.add_node("generate_slide", generate_slide_node)
+    graph.add_node("plan_slide_outline", plan_slide_outline_node)
+    graph.add_node("confirm_slide_outline", confirm_slide_outline_node)
+    graph.add_node("plan_slide_research", plan_slide_research_node)
+    graph.add_node("collect_slide_research", collect_slide_research_node)
+    graph.add_node("plan_slide_images", plan_slide_images_node)
+    graph.add_node("collect_slide_images", collect_slide_images_node)
+    graph.add_node("generate_slide_deck", generate_slide_deck_node)
+    graph.add_node("confirm_slide_deck", confirm_slide_deck_node)
+    graph.add_node("create_slide_presentation", create_slide_presentation_node)
     graph.add_node("delivery", delivery_node)
     graph.add_node("finish", finish_node)
     graph.add_node("fail", fail_node)
@@ -289,7 +363,7 @@ def build_task_graph(
         route_after_summarize,
         {
             "plan_doc_outline": "plan_doc_outline",
-            "generate_slide": "generate_slide",
+            "plan_slide_outline": "plan_slide_outline",
             "delivery": "delivery",
             "fail": "fail",
         },
@@ -335,14 +409,86 @@ def build_task_graph(
         "generate_doc",
         route_after_doc,
         {
-            "generate_slide": "generate_slide",
+            "plan_slide_outline": "plan_slide_outline",
             "delivery": "delivery",
             "fail": "fail",
         },
     )
 
     graph.add_conditional_edges(
-        "generate_slide",
+        "plan_slide_outline",
+        route_error_or("confirm_slide_outline"),
+        {
+            "confirm_slide_outline": "confirm_slide_outline",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "confirm_slide_outline",
+        route_error_or("plan_slide_research"),
+        {
+            "plan_slide_research": "plan_slide_research",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "plan_slide_research",
+        route_error_or("collect_slide_research"),
+        {
+            "collect_slide_research": "collect_slide_research",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "collect_slide_research",
+        route_error_or("plan_slide_images"),
+        {
+            "plan_slide_images": "plan_slide_images",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "plan_slide_images",
+        route_error_or("collect_slide_images"),
+        {
+            "collect_slide_images": "collect_slide_images",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "collect_slide_images",
+        route_error_or("generate_slide_deck"),
+        {
+            "generate_slide_deck": "generate_slide_deck",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "generate_slide_deck",
+        route_error_or("confirm_slide_deck"),
+        {
+            "confirm_slide_deck": "confirm_slide_deck",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "confirm_slide_deck",
+        route_error_or("create_slide_presentation"),
+        {
+            "create_slide_presentation": "create_slide_presentation",
+            "fail": "fail",
+        },
+    )
+
+    graph.add_conditional_edges(
+        "create_slide_presentation",
         route_error_or("delivery"),
         {
             "delivery": "delivery",
